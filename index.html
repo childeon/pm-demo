@@ -1,0 +1,689 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X Feed Control — Semantic Mute Demo</title>
+<style>
+  :root{
+    --bg:#f6f8f9; --surface:#ffffff; --ink:#0f1419; --ink2:#536471; --ink3:#8b98a5;
+    --line:#e8edf1; --accent:#1d9bf0; --green:#00a06a; --green-soft:#e7f5ef;
+    --red:#c4314b; --red-soft:#fbecef; --chip:#eff3f4;
+    --shadow:0 1px 2px rgba(15,20,25,.06),0 8px 24px rgba(15,20,25,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit}
+  .topbar{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
+  .topbar h1{font-size:16px;margin:0;font-weight:800}
+  .topbar .sub{color:var(--ink2);font-size:13px}
+  .stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 14px 30px}
+  .hint{color:var(--ink3);font-size:12.5px;text-align:center;max-width:430px}
+
+  /* ---------- phone ---------- */
+  .phone{width:min(430px,100%);background:var(--surface);border:1px solid var(--line);
+    border-radius:34px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
+    height:min(84vh,820px);position:relative}
+  .phonehead{padding:12px 14px 0;border-bottom:1px solid var(--line);flex:none;background:var(--surface)}
+  .statusrow{display:flex;justify-content:space-between;color:var(--ink2);font-size:11px;font-weight:600;padding-bottom:6px}
+  .apphead{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
+  .avbtn{width:34px;height:34px;border-radius:50%;border:0;background:#7856ff;color:#fff;font-weight:800;cursor:pointer;flex:none}
+  .apphead .title{font-weight:800;font-size:17px;flex:1}
+  /* prominent, labelled entry point */
+  .fcbtn{display:flex;align-items:center;gap:6px;border:0;background:var(--accent);color:#fff;
+    font-weight:700;font-size:13px;border-radius:999px;padding:8px 14px;cursor:pointer;box-shadow:0 1px 4px rgba(29,155,240,.35)}
+  .fcbtn:active{transform:scale(.97)}
+  .fcbtn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+  .tabs{display:flex;font-size:14px;color:var(--ink2)}
+  .tabs div{flex:1;text-align:center;padding:10px 0;cursor:default}
+  .tabs .on{color:var(--ink);font-weight:800;position:relative}
+  .tabs .on span{position:relative;display:inline-block;padding-bottom:8px}
+  .tabs .on span:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);border-radius:2px}
+
+  .settingsbar{display:flex;align-items:center;gap:8px;background:var(--chip);margin:8px 12px;border-radius:10px;
+    padding:8px 11px;font-size:12px;color:var(--ink2);flex:none;cursor:pointer;border:0;width:calc(100% - 24px);text-align:left}
+  .settingsbar b{color:var(--ink);font-weight:700}
+  .settingsbar .go{margin-left:auto;color:var(--accent);font-weight:700}
+
+  .feed{overflow-y:auto;flex:1}
+  .post{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .post.restored{background:var(--green-soft);border-left:3px solid var(--green)}
+  .av{width:38px;height:38px;border-radius:50%;border:0;color:#fff;font-weight:700;font-size:12px;flex:none;
+    display:flex;align-items:center;justify-content:center;cursor:default}
+  .pbody{min-width:0;flex:1}
+  .pline{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:13.5px}
+  .pname{font-weight:700}
+  .vbadge{color:var(--accent);font-size:11px}
+  .phandle,.ptime{color:var(--ink3)}
+  .rchip{font-size:10px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid var(--green);border-radius:5px;padding:1px 6px}
+  .replyto{color:var(--ink3);font-size:12px;margin:2px 0 0}
+  .ptext{margin:3px 0 6px;font-size:14px}
+  .pimg{height:130px;border-radius:14px;display:flex;align-items:flex-end;padding:8px 10px;color:#fff;font-size:11px;font-weight:700;margin-bottom:6px}
+  .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:12px;max-width:300px}
+  .empty{padding:40px 22px;text-align:center;color:var(--ink3)}
+
+  /* ---------- panel ---------- */
+  .panel{position:absolute;inset:0;background:var(--surface);z-index:10;display:flex;flex-direction:column;
+    transform:translateX(-103%);transition:transform .28s ease}
+  .panel.open{transform:none}
+  .panelhead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex:none}
+  .panelhead .back{border:0;background:none;font-size:18px;cursor:pointer;padding:2px 6px}
+  .panelhead .ptitle{flex:1}
+  .panelhead .ptitle b{font-size:15px}
+  .panelhead .ptitle div{color:var(--ink3);font-size:11.5px}
+  .panelhead .done{border:0;background:var(--accent);color:#fff;font-weight:700;border-radius:999px;padding:6px 16px;cursor:pointer}
+  .panelbody{overflow-y:auto;flex:1;padding:6px 16px 26px}
+  .sechead{display:flex;align-items:center;gap:8px;margin:14px 0 4px}
+  .sechead h2{font-size:15px;margin:0;font-weight:800}
+  .sechead .meta{margin-left:auto;color:var(--ink3);font-size:12px}
+
+  /* info button + tooltip */
+  .infowrap{position:relative;display:inline-flex}
+  .ibtn{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink3);background:none;color:var(--ink2);
+    font-size:11px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .ibtn:hover,.ibtn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+  .scopetip{position:absolute;top:24px;left:-8px;width:236px;background:var(--ink);color:#fff;border-radius:10px;
+    padding:9px 11px;font-size:12px;line-height:1.4;font-weight:500;z-index:30;opacity:0;visibility:hidden;transition:opacity .12s;box-shadow:var(--shadow)}
+  .scopetip:after{content:"";position:absolute;top:-5px;left:12px;border:5px solid transparent;border-top:0;border-bottom-color:var(--ink)}
+  .infowrap:hover .scopetip,.infowrap:focus-within .scopetip,.scopetip.open{opacity:1;visibility:visible}
+
+  .muterow{display:flex;align-items:center;gap:8px;background:var(--red-soft);border-radius:10px;padding:10px 12px;margin:7px 0;flex-wrap:wrap}
+  .muterow .mname{font-weight:700;color:var(--red);flex:1;min-width:0}
+  .muterow .mcount{color:var(--ink2);font-size:12px;white-space:nowrap}
+  .muterow button{border:0;background:none;cursor:pointer;border-radius:6px}
+  .muterow .remove{color:var(--ink3);font-size:14px;padding:2px 4px}
+  .muterow .review{flex-basis:100%;text-align:left;color:var(--red);font-weight:700;font-size:12px;text-decoration:underline;padding:2px 0 0}
+  .muterow .review[disabled]{color:var(--ink3);text-decoration:none;cursor:default}
+  .nomutes{color:var(--ink3);font-size:12.5px;padding:10px 2px}
+
+  .addmute{margin-top:16px}
+  .addmute label{font-weight:700;font-size:13px;display:block;margin-bottom:6px}
+  .addmute .row{display:flex;gap:8px}
+  .addmute input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font:inherit;outline:none}
+  .addmute input:focus{border-color:var(--accent)}
+  .mutebtn{border:0;background:var(--red);color:#fff;font-weight:700;border-radius:10px;padding:9px 18px;cursor:pointer}
+  .mutebtn:disabled{opacity:.4;cursor:default}
+  .preview{color:var(--ink2);font-size:12px;min-height:17px;margin-top:7px}
+  .preview b{color:var(--red)}
+  .suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+  .suggest .slabel{color:var(--ink3);font-size:12px}
+  .schip{border:1px dashed var(--ink3);background:none;color:var(--ink2);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer}
+  .schip:hover{border-color:var(--accent);color:var(--accent)}
+  .explain{color:var(--ink3);font-size:12px;line-height:1.5;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ---------- review dialog ---------- */
+  dialog{border:0;border-radius:16px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);width:min(430px,92vw);padding:0;max-height:78vh}
+  dialog::backdrop{background:rgba(15,20,25,.45)}
+  .mhead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .mhead h3{margin:0;font-size:15px;flex:1}
+  .mhead button{border:0;background:none;font-size:16px;cursor:pointer}
+  .mbody{padding:12px 16px 18px;overflow-y:auto;max-height:62vh}
+  .mnote{color:var(--ink3);font-size:12px;margin:0 0 10px}
+  .arow{border-bottom:1px solid var(--line);padding:11px 0}
+  .arow:last-child{border-bottom:0}
+  .awho{font-weight:700;font-size:12.5px}
+  .awho span{color:var(--ink3);font-weight:400}
+  .from{display:inline-block;font-size:10.5px;font-weight:700;color:var(--ink2);background:var(--chip);border-radius:5px;padding:1px 6px;margin-left:4px}
+  .arow p{margin:3px 0 7px;font-size:13px;color:var(--ink2)}
+  .arow button{font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--accent);font-weight:700;border-radius:999px;padding:5px 13px;cursor:pointer}
+  .arow button.rehide{color:var(--ink2)}
+  .rsec{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  .rsec h4{margin:0 0 4px;font-size:12.5px}
+  .arow.flagged{background:#fff8e8;border-radius:10px;padding:11px 10px;margin:6px -4px}
+  .flagtag{display:inline-block;font-size:10.5px;font-weight:700;color:#9a6700;background:#fdf3e1;
+    border:1px solid #e8c98a;border-radius:5px;padding:1px 6px;margin-left:4px}
+  .learn{display:flex;gap:8px;align-items:flex-start;background:#eef7fd;border:1px solid #cbe6f8;
+    border-radius:10px;padding:9px 11px;font-size:12px;color:#1a5a80;margin-bottom:12px;line-height:1.45}
+  .learn b{color:#0f3f5c}
+  .learn[hidden]{display:none}
+  .arow.marked{opacity:.72}
+  .markedrow{display:flex;align-items:center;gap:10px}
+  .donetag{font-size:12px;font-weight:700;color:var(--green)}
+  .markedrow .rehide{border:0;background:none;color:var(--ink2);text-decoration:underline;padding:2px 0;font-size:12px;font-weight:700;cursor:pointer}
+
+  /* ---------- toast ---------- */
+  .toast{position:absolute;left:14px;right:14px;bottom:16px;background:var(--ink);color:#fff;border-radius:12px;
+    padding:11px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:40}
+  .toast.show{opacity:1;transform:none;pointer-events:auto}
+  .toast button{border:0;background:none;color:#7cc7ff;font-weight:800;cursor:pointer;white-space:nowrap}
+</style>
+
+<div class="topbar">
+  <h1>X Feed Control — Semantic Mute</h1>
+</div>
+
+<div class="stage">
+  <div class="phone">
+    <div class="phonehead">
+      <div class="statusrow"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="apphead">
+        <button class="avbtn">R</button>
+        <span class="title">For You</span>
+        <button class="fcbtn" id="fcBtn">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#1d9bf0"/><circle cx="15" cy="12" r="2.4" fill="#1d9bf0"/><circle cx="8" cy="17" r="2.4" fill="#1d9bf0"/></svg>
+          Feed Control
+        </button>
+      </div>
+      <div class="tabs"><div class="on"><span>For You</span></div><div>Following</div></div>
+    </div>
+
+    <button class="settingsbar" id="barBtn">✓&nbsp;<span id="barText"></span><span class="go">Manage</span></button>
+    <div class="feed" id="feed"></div>
+
+    <div class="panel" id="panel" aria-hidden="true">
+      <div class="panelhead">
+        <button class="back" id="backBtn" aria-label="Back to feed">←</button>
+        <div class="ptitle"><b>Feed Control</b><div>Changes apply immediately</div></div>
+        <button class="done" id="doneBtn">Done</button>
+      </div>
+      <div class="panelbody">
+        <div class="sechead">
+          <h2>Muted concepts</h2>
+          <span class="infowrap">
+            <button class="ibtn" id="scopeInfo" aria-label="What does a mute cover?">i</button>
+            <span class="scopetip" id="scopeTip" role="tooltip">Mutes apply to <b>posts and replies</b> in your feed. Nothing is deleted. Remove a mute to bring its posts back.</span>
+          </span>
+          <span class="meta"><b id="muteTotal">0</b> posts hidden now</span>
+        </div>
+        <div id="mutes"></div>
+
+        <div class="addmute">
+          <label for="muteInput">Mute a new concept</label>
+          <div class="row">
+            <input id="muteInput" placeholder="e.g. sports, AI hype, gardening…" autocomplete="off">
+            <button class="mutebtn" id="muteAdd" disabled>Mute</button>
+          </div>
+          <div class="preview" id="mutePreview"></div>
+          <div class="suggest" id="suggest"></div>
+        </div>
+
+        <p class="explain">Matched on meaning, not spelling. Tap <b>Review hidden posts</b> to see everything a mute hid. If the matcher got one wrong, mark it as misclassified. That trains the matcher so it stops catching posts like it in future.</p>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"><span id="toastText"></span><button id="undoBtn">Undo</button></div>
+  </div>
+  <div class="hint">Everything responds live: muting, unmuting, and restoring update the feed immediately with no reload.</div>
+</div>
+
+<dialog id="reviewDlg">
+  <div class="mhead"><h3 id="reviewTitle">Review hidden posts</h3><button id="reviewClose" aria-label="Close">✕</button></div>
+  <div class="mbody">
+    <div class="learn" id="learnBox" hidden><span>◈</span><span id="learnText"></span></div>
+    <div id="reviewRows"></div>
+  </div>
+</dialog>
+
+<script>
+/* ---------------- topic vocabulary ---------------- */
+const SYN = {
+  pol:["politics","political","election","elections","electoral","campaign","vote","voting","government","congress","senate","policy","us electoral politics"],
+  cry:["crypto","cryptocurrency","bitcoin","btc","coin","coins","token","defi","web3","nft","crypto price speculation"],
+  cel:["celebrity","celebrities","celeb","gossip","hollywood","celebrity relationship drama","pop culture"],
+  spoil:["spoiler","spoilers","finale","episode","recaps","tv and film spoilers"],
+  ai:["ai","artificial intelligence","machine learning","llm","chatgpt","agi","ai hype"],
+  tech:["tech","technology","software","coding","programming","developers","engineering"],
+  sports:["sports","sport","basketball","nba","football","nfl","soccer","baseball","hockey","playoffs","fantasy football"],
+  food:["food","cooking","recipes","recipe","baking","dinner","restaurants","coffee"],
+  pets:["pets","pet","dog","dogs","cat","cats","animals","puppy","puppies"],
+  space:["space","astronomy","telescope","planets","nasa","rocket","launch"],
+  sci:["science","research","biology","physics","climate","ocean","nature"],
+  wx:["weather","storms","tornado","forecast","hurricane","snow"],
+  hustle:["hustle","motivation","motivational","grind","grindset","productivity","dropshipping","side hustle"],
+  news:["news","headlines","current events","world news","breaking news"],
+  econ:["economy","economics","finance","markets","stocks","inflation"],
+  humor:["humor","jokes","memes","funny","comedy","shitposting"],
+  startup:["startup","startups","founders","venture capital","funding","building in public"],
+  travel:["travel","tourism","flights","vacation","hotels"],
+  garden:["gardening","garden","plants","tomatoes"],
+  city:["local news","city council","housing","transit","subway"],
+  fit:["fitness","gym","running","marathon","workout","lifting","training"],
+  music:["music","albums","concerts","songs","tour","band"],
+  gaming:["gaming","video games","console","steam","esports","speedrun"],
+  cars:["cars","automotive","ev","electric vehicles","driving"],
+  fash:["fashion","style","clothes","sneakers","outfits"],
+  books:["books","reading","literature","novels","authors"],
+  health:["health","medicine","doctors","sleep","nutrition","wellness"],
+  parent:["parenting","kids","children","babies","school"],
+  art:["art","design","illustration","painting","museums"],
+  photo:["photography","photos","cameras","lenses"],
+  re:["real estate","housing market","mortgage","rent"],
+  edu:["education","college","university","students","tuition"],
+};
+const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",ai:"AI",tech:"tech",sports:"sports",
+  food:"food",pets:"pets",space:"space",sci:"science",wx:"weather",hustle:"hustle",news:"news",econ:"economics",
+  humor:"humor",startup:"startups",travel:"travel",garden:"gardening",city:"local news",fit:"fitness",music:"music",
+  gaming:"gaming",cars:"cars",fash:"fashion",books:"books",health:"health",parent:"parenting",art:"art",photo:"photography",
+  re:"real estate",edu:"education"};
+
+/* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img ---------------- */
+const RAW = [
+/* news */
+["Wire Report","wirereport",1,15,"news","Breaking: port workers reach a tentative agreement, averting Friday's strike deadline. Terms expected within the hour.",610,404,120,52300,0,-1],
+["Metro Desk","metro_desk",1,52,"news city","City council approves the riverfront housing plan, 7 to 2. What changes, and when.",240,71,45,9900,0,-1],
+["Global Brief","global_brief",1,88,"news","Summit talks extended a second day as negotiators work through the final trade annex.",380,210,64,17400,0,-1],
+["Wire Report","wirereport",1,110,"news","Update: the agreement covers wages through 2029 and includes an automation review clause.",180,90,22,11200,"wirereport",-1],
+["Ledger Daily","ledger_daily",0,145,"news econ","Five charts that explain this morning's revised GDP figure.",290,118,40,13600,0,-1],
+["Stormfront Watch","stormfront_watch",1,19,"wx news","Tornado watch issued for three counties until 9pm. Track the cell and sheltering guidance here.",520,610,74,31400,0,-1],
+/* politics */
+["Meridian Post","meridianpost",1,38,"pol news","Our analysis of turnout data across 14 swing counties shows a pattern pollsters keep missing.",820,301,96,48200,0,0],
+["Liberty Ledger","libertyledger",1,73,"pol news","Editorial: the committee's spending bill is a masterclass in fiscal denial. Our response, point by point.",743,288,154,39800,0,-1],
+["Donna Alvarez","donna_votes",0,112,"pol","Watched the primary debate so you did not have to. Thread on the three moments that actually mattered.",301,88,41,12400,0,-1],
+["Heartland Takes","heartland_takes",0,26,"pol","The governor's town hall tonight told you everything about where this race is headed.",214,67,38,8900,0,-1],
+["Jamal Malik","jmalik_dc",0,55,"pol","Campaign finance filings dropped tonight. Three things jumped out immediately.",188,59,27,9600,0,-1],
+["Civic Data Lab","civicdata",1,340,"pol news","New: our interactive map of every ballot measure this cycle, sortable by state and topic.",512,203,33,22100,0,4],
+["Rae Winters","rae_winters",0,64,"pol","Completely disagree. The county-level breakdown says the opposite once you weight by population.",95,12,8,3100,"meridianpost",-1],
+["Owen Pratt","owenpratt",0,130,"pol econ","The bill's actual cost depends entirely on which baseline you use, which nobody wants to say out loud.",142,38,19,5400,"libertyledger",-1],
+/* economy */
+["Econ, Annotated","econ_annotated",0,210,"econ news","What the new jobs report actually says once you read past the headline number. Thread, with charts.",598,230,66,14100,0,-1],
+["Sofia Ferreira","sofia_fintech",1,260,"econ cry","The interesting story this quarter is not price, it is the quiet institutional custody buildout nobody is tweeting about.",488,145,61,19800,0,-1],
+["Rate Watch","ratewatch",0,300,"econ","Two-year yields moved more in ninety minutes today than in the previous three weeks combined.",210,88,24,8800,0,-1],
+["Marta Kline","marta_kline",0,155,"econ re","Rent-to-income ratios in the twenty largest metros, ranked. The middle of this list surprised me.",367,140,52,12900,0,-1],
+/* crypto */
+["Chain Analyst","chainanalyst",0,95,"cry","On-chain movement this week: exchange outflows at a six-month high. What that has historically meant.",402,130,52,15300,0,-1],
+["DOGE Whale Alerts","DOGEwhale_alerts",0,6,"cry","Breaking out RIGHT NOW. Next stop one dollar. Not financial advice.",31,78,4,520,0,-1],
+["Moon Gains","moon_gains_4u",0,14,"cry hustle","This coin is about to 100x. Last chance before liftoff. Link in bio.",8,36,0,290,0,-1],
+["Quick Takes Crypto","cryptoquicktakes",0,44,"cry","Prices down. Sentiment down. Weekend chop as usual. See you Monday.",96,22,15,4100,0,-1],
+["Ledger Notes","ledger_notes",0,180,"cry tech","A readable explainer on how custody actually works, for people who keep asking me at parties.",274,91,30,9200,0,-1],
+["Priya Raman","priya_r",0,120,"cry econ","This is the only crypto thread this month worth reading and it is not about price at all.",88,19,6,2600,"sofia_fintech",-1],
+/* celebrity */
+["Tea Spillz","tea_spillzz",0,21,"cel","Sources say the breakup happened WEEKS ago and they have been faking it for the tour.",2900,840,412,31200,0,-1],
+["GlamWire","glamwire",1,130,"cel","Exclusive: what really happened backstage at the premiere after-party.",1800,520,230,27600,0,2],
+["Pop Pulse","pop_pulse",1,66,"cel","She unfollowed him. He unfollowed her. The album drops Friday. Coincidence?",4100,1200,530,36100,0,-1],
+["Red Carpet Recap","redcarpet_recap",0,240,"cel fash","Ranking every look from last night's gala. Number four should be illegal.",1250,310,98,14700,0,2],
+["Nostalgia Pop","nostalgia_pop",0,410,"cel music","No thoughts, just the 2009 VMAs.",940,210,64,8800,0,-1],
+["Dev Patel","devp_watches",0,30,"cel","Every single one of these sources is an anonymous account with nine followers.",340,60,28,7400,"tea_spillzz",-1],
+/* TV spoilers */
+["Serial Watcher","serialwatcher",0,64,"spoil","I cannot believe they killed off the captain in episode 7. Season ruined? Discuss.",410,88,190,6700,0,-1],
+["Finale Hub","tvfinale_hub",0,200,"spoil","The finale twist, explained scene by scene. Spoilers, obviously.",377,104,98,9100,0,-1],
+["Bingewatch Bea","bingewatch_bea",0,150,"spoil","Episode 8 reveal: the sister was the informant all along. I need to lie down.",520,76,145,5800,0,-1],
+["Plot Holes","plot_holes",0,330,"spoil","The time-travel rules in the finale contradict episode 2 and I have receipts.",610,150,210,7300,0,-1],
+["Screen Room","screenroom",1,90,"spoil art","Our spoiler-free review is up. The spoiler discussion lives in a separate pinned thread.",430,92,37,11900,0,-1],
+["Tom Reyes","tomreyes",0,70,"spoil","You could have put a warning on this. It is the first line of the post.",280,31,44,5100,"serialwatcher",-1],
+/* AI & tech */
+["Maya Chen","mayachen",1,120,"ai tech","Open-source tools are leveling the playing field in ways we could not have predicted a few years ago.",276,36,24,18000,0,-1],
+["Arxiv Daily","arxiv_daily",0,300,"ai tech","Today's most interesting paper: sparse attention that actually holds up at 1M-token context.",520,198,29,13800,0,-1],
+["Promptly","promptly_ai",1,75,"ai tech","We tested 12 coding assistants on the same gnarly refactor. Full results, with receipts.",940,260,88,20300,0,4],
+["AGI Countdown","AGI_Countdown_99",0,23,"ai","AGI is six months away. Everyone who disagrees is coping. Follow for daily countdown updates.",15,39,6,450,0,-1],
+["AI Growth Hacks","AI_Growth_Hacks",0,12,"ai hustle","I made 27k last month with ONE prompt. Steal my exact system.",22,64,3,610,0,-1],
+["Alex Garcia","alexgarcia_dev",1,240,"tech","Just shipped a small update that makes a big difference for performance. The details below.",203,31,18,11400,0,-1],
+["Systems Sam","systems_sam",0,520,"tech","Long read: why every outage postmortem lists the same three root causes, and why we keep writing them anyway.",812,301,77,16700,0,-1],
+["Nina Osei","nina_builds",0,140,"tech startup","Rewrote our ingest layer over the weekend. Latency down 60 percent, and the code is shorter.",340,58,26,9700,0,-1],
+["Kev Lin","kevlin_eng",0,95,"tech","Counterpoint: the benchmark you used does not reflect how anyone actually writes code day to day.",190,24,31,6200,"promptly_ai",-1],
+/* startups */
+["Lena Builds","built_by_lena",0,150,"startup tech","Six months of nights and weekends. My app is finally live. Everything I learned, the honest version.",1900,240,170,24500,0,1],
+["Seed Notes","seednotes",0,260,"startup econ","Seed rounds are closing faster and smaller. The data from the last two quarters.",420,130,38,11000,0,-1],
+["Dropship Diaries","dropship_diaries",0,190,"hustle startup","Month 3 of my dropshipping journey: revenue 11,204, profit 86. We stay optimistic.",105,18,29,3200,0,-1],
+["Hana Ito","hana_ito",0,160,"startup","Congratulations. The part about firing your first customer is the most underrated advice here.",210,14,9,4800,"built_by_lena",-1],
+/* sports */
+["Courtside Notes","courtside_notes",1,29,"sports","Overtime thriller tonight. The rookie iced it from the logo. Box score does not do it justice.",3100,640,210,26400,0,-1],
+["Statshead","statshead",0,280,"sports sci","The analytics behind why teams stopped punting on 4th-and-short. It is not about aggression.",390,120,44,8700,0,-1],
+["Fantasy Fumble","fantasy_fumble",0,105,"sports humor","My fantasy team lost by 0.3 points because of a garbage-time touchdown at midnight.",480,70,132,5900,0,-1],
+["Pitch Side","pitchside_",1,60,"sports","Second-half substitution changed the entire shape of that match. Tactical breakdown below.",760,190,58,14200,0,-1],
+["Marcus Bell","marcusbell",0,25,"sports","That was the best game I have watched all season and it was not close.",420,44,19,6100,"courtside_notes",-1],
+["Dana Ruiz","dana_ruiz",0,290,"sports sci","This is why fourth-down models are the single biggest coaching edge left in the sport.",180,29,11,3900,"statshead",-1],
+["Hoops Hourly","hoops_hourly",0,180,"sports news","Trade deadline is nine days out and three contenders still need a backup center.",640,150,72,12100,0,-1],
+["Ellie Nash","ellie_nash",0,50,"sports fit","Watching that comeback while on the treadmill nearly ended me.",95,7,4,2200,"pitchside_",-1],
+/* fitness */
+["Coach Tay","coach_tay",0,200,"fit health","Your easy runs are too fast. That is the whole post. That is the advice.",1100,240,88,19400,0,-1],
+["Marathon Math","marathonmath",0,420,"fit","Pace bands for every finish time between 3:00 and 5:00, in one printable chart.",560,190,42,11800,0,-1],
+["Iron Notes","ironnotes",0,340,"fit","Progressive overload does not mean adding weight every session. It means adding stress over time.",480,120,36,9300,0,-1],
+["Sam Okoro","sam_okoro",0,220,"fit","Needed to read this at exactly this moment in my training block.",140,9,5,3100,"coach_tay",-1],
+/* food */
+["Sourdough Sam","sourdough_sam",0,70,"food humor","Day 847 of feeding the starter. It now has opinions.",890,96,41,5600,0,-1],
+["Midnight Chef","midnight_chef",0,350,"food humor","3am grilled cheese hits different and science should study why.",980,110,73,6100,0,-1],
+["Seasonal Plates","seasonal_plates",0,135,"food","Tomato season means every dinner is just tomatoes with escalating confidence.",1150,140,66,8200,0,1],
+["Braise & Broth","braiseandbroth",0,260,"food","The five-ingredient weeknight braise I make more than anything else. Recipe in the replies.",720,180,54,10400,0,-1],
+["Cafe Notes","cafenotes_",0,410,"food travel","Ranked: every coffee shop within a ten-minute walk of the station.",330,64,28,6900,0,-1],
+/* pets */
+["Dogs of Transit","dogs_of_transit",0,48,"pets","A very good boy commuting on the 6 train this morning.",8800,2100,190,41200,0,2],
+["Cat Council","cat_council",0,58,"pets humor","The cat has claimed the warm laundry. There is no appeals process.",2300,410,120,9700,0,-1],
+["Foster Fails","fosterfails",0,300,"pets","Three weeks in and the foster has fully unionized with the resident dog.",1400,260,88,12600,0,-1],
+["Free Puppy Giveaway","FreePuppyGiveaway",0,27,"pets","FREE puppies to a good home. Just pay shipping. DM now before they are gone.",13,48,2,310,0,-1],
+/* space & science */
+["Orbital Watch","orbitalwatch",1,180,"space sci","Our latest Earth observation data highlights changes in coastal ecosystems over two decades.",1200,162,40,95000,0,0],
+["Weekend Astro","weekend_astro",0,600,"space photo","Saturn through my backyard telescope last night. Worth every minute of the cold.",2100,340,88,12800,0,5],
+["Launch Log","launchlog",0,240,"space","Static fire complete. Window opens Thursday at 2:14am local, weather 70 percent favorable.",680,210,44,15900,0,-1],
+["Deep Sea Diaries","deepsea_diaries",0,420,"sci","We put a camera 4,000m down for a month. What it recorded surprised the whole team.",5400,1600,310,60200,0,4],
+["Field Notes","fieldnotes_bio",0,380,"sci","The beetle we assumed was one species is at least four. Genomics keeps humbling taxonomy.",890,240,52,14300,0,-1],
+["Climate Plainly","climateplainly",0,290,"sci wx","What a one-degree shift actually does to a growing season, explained without jargon.",760,290,66,18200,0,-1],
+/* weather */
+["Sky Report","skyreport",0,140,"wx","Cold front arrives just after midnight. Twenty-degree drop by breakfast.",420,110,30,9100,0,-1],
+["Amy Cloudwatcher","cloudwatcher_amy",0,33,"wx humor","This cloud looks exactly like my manager during standup.",1300,180,52,7400,0,5],
+/* music */
+["Liner Notes","linernotes",0,220,"music","The remaster finally fixes the drum mix everyone complained about for fifteen years.",640,140,58,11700,0,-1],
+["Tour Tracker","tourtracker",0,95,"music","Second leg dates just posted. Presale codes go out tomorrow morning.",1800,520,140,29800,0,-1],
+["Basement Sets","basementsets",0,330,"music","Recorded four bands in one night in a room the size of a kitchen. It ruled.",380,72,26,6400,0,-1],
+["Vinyl Hours","vinylhours",0,480,"music art","The cover art on this pressing is worth the record on its own.",290,44,18,5200,0,3],
+/* gaming */
+["Frame Data","framedata_",0,160,"gaming","The patch notes quietly changed three matchups and nobody is talking about it.",720,180,94,13400,0,-1],
+["Speedrun Weekly","speedrunweekly",0,260,"gaming","New world record by 1.2 seconds, using a route nobody thought was viable.",1500,340,120,22600,0,-1],
+["Backlog Club","backlogclub",0,390,"gaming humor","Bought four games on sale. Played none. Bought two more. This is the cycle.",980,150,66,9800,0,-1],
+["Indie Shelf","indieshelf",0,300,"gaming art","This one is six hours long, costs eight dollars, and I have thought about it every day since.",640,130,44,10900,0,-1],
+/* cars */
+["Torque Talk","torquetalk",0,270,"cars","Range figures on the new model are honest, which is rarer than it should be.",520,110,48,12300,0,-1],
+["Garage Notes","garagenotes",0,440,"cars","Twelve-year-old wagon, 190k miles, still cheaper to run than anything I would replace it with.",380,64,32,7600,0,-1],
+["Charge Map","chargemap_",0,180,"cars travel","Charging corridor along the interstate finally has coverage worth planning around.",290,88,26,8100,0,-1],
+/* fashion */
+["Fit Check Daily","fitcheckdaily",0,210,"fash","The return of the wide trouser is not a trend, it is a correction.",890,150,72,14200,0,-1],
+["Sneaker Ledger","sneakerledger",0,120,"fash","Retail price, resale price, and what it actually costs to make. All three, side by side.",1100,320,96,19700,0,-1],
+["Thrift Finds","thriftfinds_",0,360,"fash","Eleven dollars. Perfect condition. I will not be taking questions.",760,110,40,8900,0,2],
+/* books */
+["Margin Notes","marginnotes",0,290,"books","Finished it in two sittings and immediately started again from page one.",640,140,52,10200,0,-1],
+["Backlist","backlist_",0,420,"books","Out of print for thirty years and it explains half of what came after it.",380,96,28,7400,0,-1],
+["Reading Log","readinglog",0,510,"books humor","Twenty-three books started, four finished. The system is working perfectly.",520,72,36,6800,0,-1],
+/* health */
+["Sleep Lab","sleeplab_",0,240,"health","Consistent wake time does more for sleep quality than total hours. The evidence is not close.",1400,420,88,26400,0,-1],
+["Plain Medicine","plainmedicine",0,380,"health sci","What the new guideline actually changes for most people, in three sentences.",890,310,64,18900,0,-1],
+["Desk Posture","deskposture",0,460,"health fit","The best posture is the next one. Move every thirty minutes and stop optimizing chairs.",620,140,44,11200,0,-1],
+/* home, city, misc */
+["Quiet Gardener","quiet_gardener",0,230,"garden humor","The tomatoes have unionized.",720,64,29,4300,0,-1],
+["Balcony Farm","balconyfarm",0,350,"garden","Four square feet, eleven plants, and more basil than one household can use.",480,88,32,7100,0,-1],
+["Transit Nerd","transitnerd",0,190,"city","The new bus lane cut average travel time by nine minutes. Nine.",1100,340,88,21400,0,-1],
+["Neighborhood Watch","hoodwatch_",0,410,"city re","Three new listings on the block this week, all above last year's comps.",290,52,38,6200,0,-1],
+["Tiny Museums","tinymuseums",0,470,"travel humor","Today's find: a museum dedicated entirely to broken umbrellas. It is perfect.",1600,290,60,10300,0,3],
+["Slow Routes","slowroutes",0,320,"travel","Took the twelve-hour train instead of the two-hour flight and would do it again.",840,190,54,13800,0,-1],
+["Studio Floor","studiofloor",0,280,"art","Six months of studies for one painting. The studies are better than the painting.",560,96,34,9400,0,3],
+["Type Notes","typenotes",0,390,"art design","The kerning on this sign has haunted me for a year.",420,88,44,7900,0,-1],
+["Lens Log","lenslog",0,340,"photo","Shot the whole trip on one prime lens and it made me a better photographer.",680,140,48,11600,0,5],
+["Parent Mode","parentmode_",0,260,"parent humor","Explained taxes to a six-year-old. She thinks it is a scam. She may be right.",1200,240,96,16400,0,-1],
+["School Run","schoolrun_",0,480,"parent edu","District calendar changed again. Third version this year.",180,44,52,4200,0,-1],
+["Campus Wire","campuswire",0,300,"edu news","Tuition freeze extended another year, with conditions attached.",520,180,64,13100,0,-1],
+["Grindset Guru","grindset_guru",0,42,"hustle","Wake up at 4am. Cold shower. 100 pushups. No excuses. That is it. That is the tweet.",34,81,9,720,0,-1],
+["Daily Inspo Quotes","quote_inspo_daily",0,37,"hustle","The only limit is your mind.",61,94,5,980,0,-1],
+];
+
+const GRAD=["linear-gradient(135deg,#1e3a5f,#4a7fa5)","linear-gradient(135deg,#2d5a3d,#7fb069)",
+"linear-gradient(135deg,#5b3a6e,#9b6b9e)","linear-gradient(135deg,#7a4a2b,#c98850)",
+"linear-gradient(135deg,#28414f,#5e8b7e)","linear-gradient(135deg,#4a3f66,#7f7caf)"];
+const AVC=["#1d9bf0","#00a06a","#8b5cf6","#e0637a","#d9822b","#3f7cac","#6b8e23","#a0567b","#2e8b8b","#8a6d3b"];
+
+const posts = RAW.map((r,i)=>({
+  id:i, n:r[0], h:r[1], v:!!r[2], m:r[3], sem:r[4].split(" "), t:r[5],
+  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:AVC[i%AVC.length]
+}));
+
+/* ---------------- semantic matcher ---------------- */
+function matchTags(input){
+  const q = input.toLowerCase().replace(/[^a-z0-9& ]/g," ").replace(/\s+/g," ").trim();
+  if(!q) return [];
+  const toks = new Set(q.split(" "));
+  const hits = new Set();
+  for(const [tag,words] of Object.entries(SYN)){
+    for(const w of words){
+      if(w.includes(" ")){ if(q.includes(w)){ hits.add(tag); break; } }
+      else if(toks.has(w) || toks.has(w+"s") || (w.endsWith("s")&&toks.has(w.slice(0,-1)))){ hits.add(tag); break; }
+    }
+  }
+  return [...hits];
+}
+function postMatches(p,m){
+  if(m.tags.some(t=>p.sem.includes(t))) return true;
+  if(m.raw && m.raw.length>3 && p.t.toLowerCase().includes(m.raw)) return true;
+  return false;
+}
+
+/* ---------------- state ---------------- */
+const state = {
+  mutes:[
+    {id:"pol", label:"US electoral politics", tags:["pol"], raw:null},
+    {id:"cry", label:"Crypto price speculation", tags:["cry"], raw:null},
+    {id:"cel", label:"Celebrity relationship drama", tags:["cel"], raw:null},
+  ],
+  exempt:new Set(),      // "muteId:postId" pairs marked misclassified (feedback only, stays hidden)
+  learned:new Map(),     // muteId -> Set of topic tags the matcher has learned to stop hiding
+  nextCustom:1,
+  lastUndo:null,
+};
+const SUGGEST=[
+  {label:"Sports",tags:["sports"]},{label:"TV and film spoilers",tags:["spoil"]},
+  {label:"AI hype",tags:["ai"]},{label:"Motivational hustle",tags:["hustle"]},
+  {label:"Fitness",tags:["fit"]},{label:"Gaming",tags:["gaming"]},
+  {label:"Food and cooking",tags:["food"]},{label:"Real estate",tags:["re"]},
+];
+
+/* ---------------- classification ---------------- */
+function classify(){
+  const byMute = new Map(state.mutes.map(m=>[m.id,[]]));
+  const visible=[];
+  for(const p of posts){
+    const m = state.mutes.find(m=>postMatches(p,m));
+    if(m) byMute.get(m.id).push(p); else visible.push(p);
+  }
+  return {visible, byMute};
+}
+/* corrections: marking a post misclassified teaches the matcher which adjacent
+   topics it is over-matching, so similar hidden posts get flagged for review */
+function correctionsFor(muteId){ return [...state.exempt].filter(k=>k.startsWith(muteId+":")).map(k=>+k.split(":")[1]); }
+function learnFrom(muteId, postId){
+  const m = state.mutes.find(x=>x.id===muteId);
+  const extra = posts[postId].sem.filter(t=>!m.tags.includes(t));
+  if(!state.learned.has(muteId)) state.learned.set(muteId,new Set());
+  extra.forEach(t=>state.learned.get(muteId).add(t));
+}
+function relearn(muteId){
+  state.learned.set(muteId,new Set());
+  correctionsFor(muteId).forEach(id=>learnFrom(muteId,id));
+}
+function flaggedSimilar(muteId, hiddenList){
+  const learned = state.learned.get(muteId);
+  if(!learned || !learned.size) return new Set();
+  return new Set(hiddenList.filter(p=>p.sem.some(t=>learned.has(t))).map(p=>p.id));
+}
+
+const maxViews = Math.max(...posts.map(p=>p.views));
+function rank(p){
+  const rec = Math.max(0, 1 - p.m/720);
+  const eng = Math.log(1+p.views)/Math.log(1+maxViews);
+  return .45*rec + .55*eng;
+}
+
+/* ---------------- helpers ---------------- */
+const $ = id=>document.getElementById(id);
+const esc = s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fmt = n=> n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,"")+"K" : String(n);
+const ago = m=> m<60 ? m+"m" : Math.round(m/60)+"h";
+const initials = n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
+
+/* ---------------- feed ---------------- */
+function renderFeed(cls){
+  const list = cls.visible.slice().sort((a,b)=>rank(b)-rank(a));
+  const hidden = posts.length - cls.visible.length;
+  $("barText").innerHTML = `<b>${state.mutes.length} muted concept${state.mutes.length===1?"":"s"}</b> · ${hidden} post${hidden===1?"":"s"} hidden`;
+
+  if(!list.length){ $("feed").innerHTML = `<div class="empty">Everything is filtered out. Remove a mute in Feed Control.</div>`; return; }
+
+  $("feed").innerHTML = list.map(p=>{
+    return `<article class="post">
+      <div class="av" style="background:${p.color}">${esc(initials(p.n))}</div>
+      <div class="pbody">
+        <div class="pline">
+          <span class="pname">${esc(p.n)}</span>${p.v?'<span class="vbadge">✔</span>':""}
+          <span class="phandle">@${esc(p.h)}</span><span class="ptime">· ${ago(p.m)}</span>
+        </div>
+        ${p.replyTo?`<div class="replyto">Replying to @${esc(p.replyTo)}</div>`:""}
+        <p class="ptext">${esc(p.t)}</p>
+        ${p.img>=0?`<div class="pimg" style="background:${GRAD[p.img]}">IMAGE</div>`:""}
+        <div class="prow"><span>💬 ${fmt(p.rep)}</span><span>↻ ${fmt(p.rts)}</span><span>♡ ${fmt(p.likes)}</span><span>📊 ${fmt(p.views)}</span></div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+/* ---------------- mutes ---------------- */
+function renderMutes(cls){
+  const total = [...cls.byMute.values()].reduce((a,x)=>a+x.length,0);
+  $("muteTotal").textContent = total;
+
+  $("mutes").innerHTML = state.mutes.length ? state.mutes.map((m,i)=>{
+    const n = cls.byMute.get(m.id).length;
+    const restoredHere = correctionsFor(m.id).length;
+    return `<div class="muterow">
+      <span class="mname">${esc(m.label)}</span>
+      <span class="mcount">${n} hidden${restoredHere?` · ${restoredHere} correction${restoredHere===1?"":"s"}`:""}</span>
+      <button class="remove" data-rm="${i}" aria-label="Remove mute ${esc(m.label)}" title="Remove this mute">✕</button>
+      <button class="review" data-review="${m.id}" ${n||restoredHere?"":"disabled"}>Review hidden posts (${n})</button>
+    </div>`;
+  }).join("") : `<div class="nomutes">No muted concepts yet. Add one below and your feed updates immediately.</div>`;
+
+  $("mutes").querySelectorAll("[data-rm]").forEach(el=>
+    el.addEventListener("click",e=>removeMute(+e.currentTarget.dataset.rm)));
+  $("mutes").querySelectorAll("[data-review]").forEach(el=>
+    el.addEventListener("click",e=>openReview(e.currentTarget.dataset.review)));
+
+  const taken = new Set(state.mutes.flatMap(m=>m.tags));
+  const avail = SUGGEST.filter(s=>!s.tags.every(t=>taken.has(t)));
+  $("suggest").innerHTML = avail.length
+    ? `<span class="slabel">Try:</span>` + avail.map((s,i)=>`<button class="schip" data-sug="${i}">${esc(s.label)}</button>`).join("")
+    : "";
+  $("suggest").querySelectorAll("[data-sug]").forEach(el=>
+    el.addEventListener("click",e=>{ const s=avail[+e.currentTarget.dataset.sug]; addMute(s.label,s.tags,null); }));
+}
+
+function addMute(label,tags,raw){
+  state.mutes.push({id:"c"+state.nextCustom++, label, tags, raw});
+  $("muteInput").value=""; $("mutePreview").textContent=""; $("muteAdd").disabled=true;
+  const cls = update();
+  const n = cls.byMute.get(state.mutes[state.mutes.length-1].id).length;
+  const added = state.mutes[state.mutes.length-1];
+  toast(`Muted “${label}” — ${n} post${n===1?"":"s"} hidden`, ()=>{
+    state.mutes = state.mutes.filter(m=>m!==added); update();
+    toast(`Mute removed — ${n} post${n===1?"":"s"} back in your feed`);
+  });
+}
+
+function removeMute(i){
+  const m = state.mutes[i];
+  state.mutes.splice(i,1);
+  update();
+  toast(`Unmuted “${m.label}” — concept restored`, ()=>{
+    state.mutes.splice(i,0,m); update();
+    toast(`“${m.label}” muted again`);
+  });
+}
+
+/* ---------------- review hidden posts ---------------- */
+let reviewId = null;
+function openReview(muteId){
+  reviewId = muteId;
+  drawReview();
+  $("reviewDlg").showModal();
+}
+function drawReview(){
+  const m = state.mutes.find(x=>x.id===reviewId);
+  if(!m){ $("reviewDlg").close(); return; }
+  const cls = classify();
+  const hidden = cls.byMute.get(m.id);
+  const corrections = correctionsFor(m.id);
+  const flagged = flaggedSimilar(m.id, hidden);
+  corrections.forEach(id=>flagged.delete(id));
+
+  $("reviewTitle").textContent = `Review hidden posts — ${m.label} (${hidden.length})`;
+
+  // learning banner
+  const learnedTags = [...(state.learned.get(m.id)||[])].map(t=>LABEL[t]).filter(Boolean);
+  if(corrections.length){
+    $("learnBox").hidden = false;
+    $("learnText").innerHTML = `<b>Matcher updated from ${corrections.length} correction${corrections.length===1?"":"s"}.</b> `
+      + (learnedTags.length ? `It is learning that ${esc(learnedTags.slice(0,3).join(", "))} content should not be caught by this mute. `
+                            : `It will apply this to similar posts going forward. `)
+      + (flagged.size ? `${flagged.size} similar post${flagged.size===1?"":"s"} below ${flagged.size===1?"is":"are"} flagged for your review.` : "");
+  } else {
+    $("learnBox").hidden = true;
+  }
+
+  // flagged suggestions first, already-marked items last
+  const ordered = hidden.slice().sort((a,b)=>{
+    const rank = p => state.exempt.has(m.id+":"+p.id) ? 2 : (flagged.has(p.id) ? 0 : 1);
+    return rank(a)-rank(b);
+  });
+
+  $("reviewRows").innerHTML = ordered.length ? ordered.map(p=>{
+    const marked = state.exempt.has(m.id+":"+p.id);
+    return `<div class="arow ${flagged.has(p.id)&&!marked?"flagged":""} ${marked?"marked":""}">
+      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}</div>
+      <p>${esc(p.t)}</p>
+      ${marked
+        ? `<div class="markedrow"><span class="donetag">✓ Marked as misclassified</span><button class="rehide" data-uncorrect="${m.id}:${p.id}">Undo</button></div>`
+        : `<button data-correct="${m.id}:${p.id}">Mark as misclassified</button>`}
+    </div>`;
+  }).join("") : `<p class="mnote">Nothing is hidden by this mute right now.</p>`;
+
+  $("reviewRows").querySelectorAll("[data-correct]").forEach(el=>
+    el.addEventListener("click",e=>{
+      const key = e.currentTarget.dataset.correct;
+      const [mid,pid] = key.split(":");
+      state.exempt.add(key); learnFrom(mid,+pid); update(); drawReview();
+      toast("Marked as misclassified — the matcher will learn from this", ()=>{
+        state.exempt.delete(key); relearn(mid); update(); drawReview(); toast("Correction undone");
+      });
+    }));
+  $("reviewRows").querySelectorAll("[data-uncorrect]").forEach(el=>
+    el.addEventListener("click",e=>{
+      const key = e.currentTarget.dataset.uncorrect;
+      const mid = key.split(":")[0];
+      state.exempt.delete(key); relearn(mid); update(); drawReview();
+      toast("Correction undone", ()=>{
+        const [m2,p2] = key.split(":");
+        state.exempt.add(key); learnFrom(m2,+p2); update(); drawReview(); toast("Marked as misclassified again");
+      });
+    }));
+}
+$("reviewClose").addEventListener("click",()=>$("reviewDlg").close());
+
+/* ---------------- add-a-mute input ---------------- */
+$("muteInput").addEventListener("input",e=>{
+  const v = e.target.value.trim();
+  $("muteAdd").disabled = !v;
+  if(!v){ $("mutePreview").textContent=""; return; }
+  const tags = matchTags(v);
+  const fake = {id:"__p", tags, raw:v.toLowerCase()};
+  const n = posts.filter(p=>postMatches(p,fake)).length;
+  const names = tags.map(t=>LABEL[t]).filter(Boolean).slice(0,3).join(", ");
+  $("mutePreview").innerHTML = n
+    ? `Semantic match${names?" ("+esc(names)+")":""}: would hide <b>${n} post${n===1?"":"s"}</b> in this feed`
+    : `No matches in this feed yet. The mute will still apply to future posts.`;
+});
+$("muteAdd").addEventListener("click",()=>{
+  const v = $("muteInput").value.trim();
+  if(!v) return;
+  addMute(v[0].toUpperCase()+v.slice(1), matchTags(v), v.toLowerCase());
+});
+$("muteInput").addEventListener("keydown",e=>{ if(e.key==="Enter" && !$("muteAdd").disabled) $("muteAdd").click(); });
+
+/* ---------------- scope tooltip (hover + click) ---------------- */
+$("scopeInfo").addEventListener("click",e=>{ e.stopPropagation(); $("scopeTip").classList.toggle("open"); });
+document.addEventListener("click",()=>$("scopeTip").classList.remove("open"));
+
+/* ---------------- panel ---------------- */
+function setPanel(open){ $("panel").classList.toggle("open",open); $("panel").setAttribute("aria-hidden",!open); }
+$("fcBtn").addEventListener("click",()=>setPanel(true));
+$("barBtn").addEventListener("click",()=>setPanel(true));
+$("backBtn").addEventListener("click",()=>setPanel(false));
+$("doneBtn").addEventListener("click",()=>setPanel(false));
+
+/* ---------------- toast with undo ---------------- */
+let toastTimer;
+function toast(msg, undo){
+  $("toastText").textContent = msg;
+  $("undoBtn").hidden = !undo;
+  state.lastUndo = undo || null;
+  const t = $("toast"); t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), undo?4200:2200);
+}
+$("undoBtn").addEventListener("click",()=>{
+  const fn = state.lastUndo; state.lastUndo=null;
+  $("toast").classList.remove("show");
+  if(fn) fn();
+});
+
+/* ---------------- main ---------------- */
+function update(){
+  const cls = classify();
+  renderFeed(cls);
+  renderMutes(cls);
+  return cls;
+}
+update();
+</script>
