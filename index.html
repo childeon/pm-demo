@@ -12,18 +12,18 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+    font-size:15.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
   button{font:inherit;color:inherit}
   .topbar{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
-  .topbar h1{font-size:16px;margin:0;font-weight:800}
+  .topbar h1{font-size:17px;margin:0;font-weight:800}
   .topbar .sub{color:var(--ink2);font-size:13px}
   .stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 14px 30px}
-  .hint{color:var(--ink3);font-size:12.5px;text-align:center;max-width:430px}
+  .hint{color:var(--ink3);font-size:13px;text-align:center;max-width:460px}
 
   /* ---------- phone ---------- */
-  .phone{width:min(430px,100%);background:var(--surface);border:1px solid var(--line);
+  .phone{width:min(460px,100%);background:var(--surface);border:1px solid var(--line);
     border-radius:34px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
-    height:min(84vh,820px);position:relative}
+    height:min(86vh,860px);position:relative}
   .phonehead{padding:12px 14px 0;border-bottom:1px solid var(--line);flex:none;background:var(--surface)}
   .statusrow{display:flex;justify-content:space-between;color:var(--ink2);font-size:11px;font-weight:600;padding-bottom:6px}
   .apphead{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
@@ -41,26 +41,39 @@
   .tabs .on span:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);border-radius:2px}
 
   .settingsbar{display:flex;align-items:center;gap:8px;background:var(--chip);margin:8px 12px;border-radius:10px;
-    padding:8px 11px;font-size:12px;color:var(--ink2);flex:none;cursor:pointer;border:0;width:calc(100% - 24px);text-align:left}
+    padding:9px 12px;font-size:13px;color:var(--ink2);flex:none;cursor:pointer;border:0;width:calc(100% - 24px);text-align:left}
   .settingsbar b{color:var(--ink);font-weight:700}
   .settingsbar .go{margin-left:auto;color:var(--accent);font-weight:700}
 
   .feed{overflow-y:auto;flex:1}
-  .post{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .post{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);
+    transition:background-color .6s ease,border-color .6s ease}
   .post.restored{background:var(--green-soft);border-left:3px solid var(--green)}
-  .av{width:38px;height:38px;border-radius:50%;border:0;color:#fff;font-weight:700;font-size:12px;flex:none;
+  .av{width:40px;height:40px;border-radius:50%;border:0;color:#fff;font-weight:700;font-size:12px;flex:none;
     display:flex;align-items:center;justify-content:center;cursor:default}
   .pbody{min-width:0;flex:1}
-  .pline{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:13.5px}
+  .pline{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:15px}
   .pname{font-weight:700}
-  .vbadge{color:var(--accent);font-size:11px}
+  .vbadge{color:var(--accent);font-size:12px}
   .phandle,.ptime{color:var(--ink3)}
   .rchip{font-size:10px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid var(--green);border-radius:5px;padding:1px 6px}
-  .replyto{color:var(--ink3);font-size:12px;margin:2px 0 0}
-  .ptext{margin:3px 0 6px;font-size:14px}
+  .replyto{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+  .ptext{margin:4px 0 7px;font-size:16.5px;line-height:1.55}
   .pimg{height:130px;border-radius:14px;display:flex;align-items:flex-end;padding:8px 10px;color:#fff;font-size:11px;font-weight:700;margin-bottom:6px}
-  .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:12px;max-width:300px}
+  .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:13px;max-width:320px}
   .empty{padding:40px 22px;text-align:center;color:var(--ink3)}
+
+  /* ---------- concept-match highlighting + mute transition ---------- */
+  mark.hl{background:rgba(196,49,75,.14);color:var(--red);font-weight:800;border-radius:3px;padding:0 2px}
+  .arow mark.hl{background:rgba(196,49,75,.12)}
+  .mutelabel{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:#fff;
+    background:var(--red);border-radius:999px;padding:4px 11px;margin:2px 0 6px}
+  .mutelabel .nokw{background:rgba(255,255,255,.25);border-radius:999px;padding:1px 8px;font-weight:700}
+  .nokwtag{display:inline-block;font-size:10.5px;font-weight:700;color:#1a5a80;background:#eef7fd;
+    border:1px solid #cbe6f8;border-radius:5px;padding:1px 6px;margin-left:4px}
+  @keyframes mutefade{0%{opacity:1}55%{opacity:1}100%{opacity:0;transform:scale(.96)}}
+  .post.muting{animation:mutefade .85s ease forwards;background:var(--red-soft)}
+  .post.muting .ptext{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
 
   /* ---------- panel ---------- */
   .panel{position:absolute;inset:0;background:var(--surface);z-index:10;display:flex;flex-direction:column;
@@ -109,7 +122,8 @@
   .suggest .slabel{color:var(--ink3);font-size:12px}
   .schip{border:1px dashed var(--ink3);background:none;color:var(--ink2);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer}
   .schip:hover{border-color:var(--accent);color:var(--accent)}
-  .explain{color:var(--ink3);font-size:12px;line-height:1.5;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .explain{color:var(--ink2);font-size:13px;line-height:1.55;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .explain b{color:var(--ink)}
 
   /* ---------- review dialog ---------- */
   dialog{border:0;border-radius:16px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);width:min(430px,92vw);padding:0;max-height:78vh}
@@ -151,6 +165,7 @@
 
 <div class="topbar">
   <h1>X Feed Control — Semantic Mute</h1>
+  <span class="sub">Matches concepts, not keywords</span>
 </div>
 
 <div class="stage">
@@ -198,13 +213,13 @@
           <div class="suggest" id="suggest"></div>
         </div>
 
-        <p class="explain">Matched on meaning, not spelling. Tap <b>Review hidden posts</b> to see everything a mute hid. If the matcher got one wrong, mark it as misclassified. That trains the matcher so it stops catching posts like it in future.</p>
+        <p class="explain">Matched on meaning, not spelling — <b>a post can be hidden even when it never uses the muted word.</b> Tap <b>Review hidden posts</b> to see exactly why, including matches with no shared keyword at all. If the matcher got one wrong, mark it as misclassified — that trains it to stop catching posts like it.</p>
       </div>
     </div>
 
     <div class="toast" id="toast"><span id="toastText"></span><button id="undoBtn">Undo</button></div>
   </div>
-  <div class="hint">Everything responds live: muting, unmuting, and restoring update the feed immediately with no reload.</div>
+  <div class="hint">Mute a concept below and watch matching posts fade out of the timeline live — no reload, no keyword search.</div>
 </div>
 
 <dialog id="reviewDlg">
@@ -424,19 +439,38 @@ function postMatches(p,m){
   return false;
 }
 
+/* ---------------- concept-match evidence: does the literal word even appear? ---------------- */
+function triggerWords(text,tags){
+  const lower = text.toLowerCase();
+  const hits = [];
+  for(const t of tags){
+    for(const w of (SYN[t]||[])){
+      if(w.length>2 && lower.includes(w)) hits.push(w);
+    }
+  }
+  return [...new Set(hits)].sort((a,b)=>b.length-a.length);
+}
+function highlightText(text,tags){
+  let html = esc(text);
+  for(const w of triggerWords(text,tags)){
+    const re = new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");
+    html = html.replace(re,"<mark class=\"hl\">$1</mark>");
+  }
+  return html;
+}
+
 /* ---------------- state ---------------- */
 const state = {
-  mutes:[
-    {id:"pol", label:"US electoral politics", tags:["pol"], raw:null},
-    {id:"cry", label:"Crypto price speculation", tags:["cry"], raw:null},
-    {id:"cel", label:"Celebrity relationship drama", tags:["cel"], raw:null},
-  ],
+  mutes:[],               // demo starts with nothing muted — mute live to show the before/after
   exempt:new Set(),      // "muteId:postId" pairs marked misclassified (feedback only, stays hidden)
   learned:new Map(),     // muteId -> Set of topic tags the matcher has learned to stop hiding
   nextCustom:1,
   lastUndo:null,
 };
 const SUGGEST=[
+  {label:"US electoral politics",tags:["pol"]},
+  {label:"Crypto price speculation",tags:["cry"]},
+  {label:"Celebrity relationship drama",tags:["cel"]},
   {label:"Sports",tags:["sports"]},{label:"TV and film spoilers",tags:["spoil"]},
   {label:"AI hype",tags:["ai"]},{label:"Motivational hustle",tags:["hustle"]},
   {label:"Fitness",tags:["fit"]},{label:"Gaming",tags:["gaming"]},
@@ -487,15 +521,29 @@ const ago = m=> m<60 ? m+"m" : Math.round(m/60)+"h";
 const initials = n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
 
 /* ---------------- feed ---------------- */
-function renderFeed(cls){
-  const list = cls.visible.slice().sort((a,b)=>rank(b)-rank(a));
+function renderFeed(cls, opts){
+  opts = opts || {};
+  const list = (opts.frozenIds ? posts.filter(p=>opts.frozenIds.has(p.id)) : cls.visible.slice())
+    .sort((a,b)=>rank(b)-rank(a));
   const hidden = posts.length - cls.visible.length;
-  $("barText").innerHTML = `<b>${state.mutes.length} muted concept${state.mutes.length===1?"":"s"}</b> · ${hidden} post${hidden===1?"":"s"} hidden`;
+
+  $("barText").innerHTML = state.mutes.length
+    ? `<b>${state.mutes.length} muted concept${state.mutes.length===1?"":"s"}</b> · ${hidden} post${hidden===1?"":"s"} hidden`
+    : `Nothing muted yet — <b>tap Manage to try it live</b>`;
 
   if(!list.length){ $("feed").innerHTML = `<div class="empty">Everything is filtered out. Remove a mute in Feed Control.</div>`; return; }
 
   $("feed").innerHTML = list.map(p=>{
-    return `<article class="post">
+    const isMuting = opts.hidingIds && opts.hidingIds.has(p.id);
+    const isFlash = opts.flashIds && opts.flashIds.has(p.id);
+    let textHtml = esc(p.t), overlay = "";
+    if(isMuting){
+      const m = state.mutes.find(x=>x.id===opts.muteOf.get(p.id));
+      const words = m ? triggerWords(p.t,m.tags) : [];
+      textHtml = m ? highlightText(p.t,m.tags) : esc(p.t);
+      overlay = `<div class="mutelabel">Muted — ${esc(m?m.label:"")}${words.length?"":' <span class="nokw">no keyword match</span>'}</div>`;
+    }
+    return `<article class="post ${isMuting?"muting":""} ${isFlash?"restored":""}" data-id="${p.id}">
       <div class="av" style="background:${p.color}">${esc(initials(p.n))}</div>
       <div class="pbody">
         <div class="pline">
@@ -503,12 +551,22 @@ function renderFeed(cls){
           <span class="phandle">@${esc(p.h)}</span><span class="ptime">· ${ago(p.m)}</span>
         </div>
         ${p.replyTo?`<div class="replyto">Replying to @${esc(p.replyTo)}</div>`:""}
-        <p class="ptext">${esc(p.t)}</p>
+        <p class="ptext">${textHtml}</p>
+        ${overlay}
         ${p.img>=0?`<div class="pimg" style="background:${GRAD[p.img]}">IMAGE</div>`:""}
         <div class="prow"><span>💬 ${fmt(p.rep)}</span><span>↻ ${fmt(p.rts)}</span><span>♡ ${fmt(p.likes)}</span><span>📊 ${fmt(p.views)}</span></div>
       </div>
     </article>`;
   }).join("");
+
+  if(opts.flashIds && opts.flashIds.size){
+    setTimeout(()=>{
+      opts.flashIds.forEach(id=>{
+        const el = document.querySelector(`.post[data-id="${id}"]`);
+        if(el) el.classList.remove("restored");
+      });
+    }, 1500);
+  }
 }
 
 /* ---------------- mutes ---------------- */
@@ -517,15 +575,17 @@ function renderMutes(cls){
   $("muteTotal").textContent = total;
 
   $("mutes").innerHTML = state.mutes.length ? state.mutes.map((m,i)=>{
-    const n = cls.byMute.get(m.id).length;
+    const hiddenList = cls.byMute.get(m.id);
+    const n = hiddenList.length;
     const restoredHere = correctionsFor(m.id).length;
+    const meaningOnly = hiddenList.filter(p=>!triggerWords(p.t,m.tags).length).length;
     return `<div class="muterow">
       <span class="mname">${esc(m.label)}</span>
-      <span class="mcount">${n} hidden${restoredHere?` · ${restoredHere} correction${restoredHere===1?"":"s"}`:""}</span>
+      <span class="mcount">${n} hidden${meaningOnly?` · <b>${meaningOnly} by meaning only</b>`:""}${restoredHere?` · ${restoredHere} correction${restoredHere===1?"":"s"}`:""}</span>
       <button class="remove" data-rm="${i}" aria-label="Remove mute ${esc(m.label)}" title="Remove this mute">✕</button>
       <button class="review" data-review="${m.id}" ${n||restoredHere?"":"disabled"}>Review hidden posts (${n})</button>
     </div>`;
-  }).join("") : `<div class="nomutes">No muted concepts yet. Add one below and your feed updates immediately.</div>`;
+  }).join("") : `<div class="nomutes">No muted concepts yet. Add one below and watch the feed change live.</div>`;
 
   $("mutes").querySelectorAll("[data-rm]").forEach(el=>
     el.addEventListener("click",e=>removeMute(+e.currentTarget.dataset.rm)));
@@ -601,9 +661,10 @@ function drawReview(){
 
   $("reviewRows").innerHTML = ordered.length ? ordered.map(p=>{
     const marked = state.exempt.has(m.id+":"+p.id);
+    const noKeyword = !triggerWords(p.t,m.tags).length;
     return `<div class="arow ${flagged.has(p.id)&&!marked?"flagged":""} ${marked?"marked":""}">
-      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}</div>
-      <p>${esc(p.t)}</p>
+      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}${noKeyword?'<span class="nokwtag">No keyword — matched by meaning</span>':""}</div>
+      <p>${highlightText(p.t,m.tags)}</p>
       ${marked
         ? `<div class="markedrow"><span class="donetag">✓ Marked as misclassified</span><button class="rehide" data-uncorrect="${m.id}:${p.id}">Undo</button></div>`
         : `<button data-correct="${m.id}:${p.id}">Mark as misclassified</button>`}
@@ -679,10 +740,34 @@ $("undoBtn").addEventListener("click",()=>{
 });
 
 /* ---------------- main ---------------- */
+let visibleIds = new Set(posts.map(p=>p.id)); // feed starts fully unmuted
+let updateToken = 0;
+
 function update(){
+  const myToken = ++updateToken;
   const cls = classify();
-  renderFeed(cls);
   renderMutes(cls);
+
+  const newIds = new Set(cls.visible.map(p=>p.id));
+  const hiding = [...visibleIds].filter(id=>!newIds.has(id));
+  const showing = [...newIds].filter(id=>!visibleIds.has(id));
+
+  if(hiding.length){
+    const muteOf = new Map();
+    for(const [mid,list] of cls.byMute) for(const p of list) muteOf.set(p.id,mid);
+    renderFeed(cls,{frozenIds:visibleIds,hidingIds:new Set(hiding),muteOf});
+    visibleIds = newIds;
+    setTimeout(()=>{
+      if(myToken!==updateToken) return;
+      renderFeed(classify());
+    },850);
+  } else if(showing.length){
+    visibleIds = newIds;
+    renderFeed(cls,{flashIds:new Set(showing)});
+  } else {
+    visibleIds = newIds;
+    renderFeed(cls);
+  }
   return cls;
 }
 update();
