@@ -60,6 +60,7 @@
   .replyto{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
   .ptext{margin:4px 0 7px;font-size:16.5px;line-height:1.55}
   .pimg{height:130px;border-radius:14px;display:flex;align-items:flex-end;padding:8px 10px;color:#fff;font-size:11px;font-weight:700;margin-bottom:6px}
+  .pimg.realimg{height:auto;max-height:320px;width:100%;object-fit:cover;display:block;padding:0}
   .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:13px;max-width:320px}
   .empty{padding:40px 22px;text-align:center;color:var(--ink3)}
 
@@ -265,15 +266,29 @@ const SYN = {
   photo:["photography","photos","cameras","lenses"],
   re:["real estate","housing market","mortgage","rent"],
   edu:["education","college","university","students","tuition"],
+  course:["block week","pm course","product management course","negotiation exercise","peer evaluation",
+    "technical debt","group project","ethics in product development","canvas announcement","case study"],
 };
 const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",ai:"AI",tech:"tech",sports:"sports",
   food:"food",pets:"pets",space:"space",sci:"science",wx:"weather",hustle:"hustle",news:"news",econ:"economics",
   humor:"humor",startup:"startups",travel:"travel",garden:"gardening",city:"local news",fit:"fitness",music:"music",
   gaming:"gaming",cars:"cars",fash:"fashion",books:"books",health:"health",parent:"parenting",art:"art",photo:"photography",
-  re:"real estate",edu:"education"};
+  re:"real estate",edu:"education",course:"our PM course"};
 
-/* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img ---------------- */
+/* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img, [photo] ---------------- */
 const RAW = [
+/* our class — PM course chatter, pinned to the top so muting "Our own class chatter" is obvious */
+["Nikhil Malik","nikhilmalik",0,3,"course","me, an aspiring PM, about to argue SQL vs NoSQL with an engineer who has six years of actual database experience. we are so back. (I am going to lose)",620,140,58,15200,0,-1],
+["Miranda Marpaung","mirandamarp",0,5,"course","cannot believe our group picked Twitter/X for the final project and I am now building an X feed clone at 11pm the night before it's due. extremely meta. extremely tired.",840,190,66,22400,0,-1],
+["Ruiyan Li","ruiyanli",0,2,"course","'please complete the peer evaluation survey by 11:59pm today' — Bela, at 11:33am, giving us exactly zero chill. rating my teammates a 10/10 because we are all suffering together",710,120,44,18100,0,-1],
+["Heloisa Oro de Lirio","heloisaoro",0,6,"course","9am to 5pm, Sunday through Thursday, and if you dial in remote you're marked absent. block week really said 'no thoughts, just survive.' day 4 and my caffeine half-life is about eleven minutes",930,210,80,26700,0,-1],
+["Mithat Kus","mithatkus",0,4,"course","spent the morning on 'Ethics in Product Development' and the afternoon on 'Addressing Technical Debt.' a full day of making choices I will regret",560,95,37,19300,0,-1],
+["Nikhil Malik","nikhilmalik",0,7,"course","presentation order just dropped: DocuSign, Pinterest, Spotify, Netflix, Uber, then us. judges will have sat through four hours of slides by the time we go. no notes, we simply must be funnier than a DocuSign pitch",780,160,71,24100,0,-1],
+["Miranda Marpaung","mirandamarp",0,4,"course","'apologies for the technical difficulties' is doing a lot of heavy lifting in today's Canvas announcement. we have refreshed the negotiation doc four times",480,88,29,16400,0,-1],
+["Ruiyan Li","ruiyanli",0,9,"course","got asked by three different classmates today to fill out their customer survey for a company I am not even studying. the research economy of block week runs entirely on favors",390,64,22,12300,0,-1],
+["Mithat Kus","mithatkus",0,8,"course","our company got decided by a Google Form with a 3pm deadline. democracy in product management",620,140,38,14600,0,-1],
+["Nikhil Malik","nikhilmalik",0,6,"course","At least we didn't get assigned DocuSign.",210,30,9,11000,"mirandamarp",-1],
+["Heloisa Oro de Lirio","heloisaoro",0,1,"course","proof we are alive after negotiation day. no further questions.",1100,240,96,31200,0,-1,"group-photo.jpg"],
 /* news */
 ["Wire Report","wirereport",1,15,"news","Breaking: port workers reach a tentative agreement, averting Friday's strike deadline. Terms expected within the hour.",610,404,120,52300,0,-1],
 ["Metro Desk","metro_desk",1,52,"news city","City council approves the riverfront housing plan, 7 to 2. What changes, and when.",240,71,45,9900,0,-1],
@@ -416,7 +431,7 @@ const AVC=["#1d9bf0","#00a06a","#8b5cf6","#e0637a","#d9822b","#3f7cac","#6b8e23"
 
 const posts = RAW.map((r,i)=>({
   id:i, n:r[0], h:r[1], v:!!r[2], m:r[3], sem:r[4].split(" "), t:r[5],
-  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:AVC[i%AVC.length]
+  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:AVC[i%AVC.length], photo:r[12]||null
 }));
 
 /* ---------------- semantic matcher ---------------- */
@@ -468,6 +483,7 @@ const state = {
   lastUndo:null,
 };
 const SUGGEST=[
+  {label:"Our own class chatter",tags:["course"]},
   {label:"US electoral politics",tags:["pol"]},
   {label:"Crypto price speculation",tags:["cry"]},
   {label:"Celebrity relationship drama",tags:["cel"]},
@@ -510,7 +526,8 @@ const maxViews = Math.max(...posts.map(p=>p.views));
 function rank(p){
   const rec = Math.max(0, 1 - p.m/720);
   const eng = Math.log(1+p.views)/Math.log(1+maxViews);
-  return .45*rec + .55*eng;
+  const base = .45*rec + .55*eng;
+  return p.sem.includes("course") ? 10+base : base; // our class posts always sort first
 }
 
 /* ---------------- helpers ---------------- */
@@ -553,7 +570,7 @@ function renderFeed(cls, opts){
         ${p.replyTo?`<div class="replyto">Replying to @${esc(p.replyTo)}</div>`:""}
         <p class="ptext">${textHtml}</p>
         ${overlay}
-        ${p.img>=0?`<div class="pimg" style="background:${GRAD[p.img]}">IMAGE</div>`:""}
+        ${p.photo?`<img class="pimg realimg" src="${esc(p.photo)}" alt="">`:(p.img>=0?`<div class="pimg" style="background:${GRAD[p.img]}">IMAGE</div>`:"")}
         <div class="prow"><span>💬 ${fmt(p.rep)}</span><span>↻ ${fmt(p.rts)}</span><span>♡ ${fmt(p.likes)}</span><span>📊 ${fmt(p.views)}</span></div>
       </div>
     </article>`;
