@@ -73,7 +73,7 @@
   .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:13px;max-width:320px}
   .empty{padding:40px 22px;text-align:center;color:var(--ink3)}
 
-  /* ---------- concept-match highlighting + mute transition ---------- */
+  /* ---------- semantic-match highlighting + mute transition ---------- */
   mark.hl{background:rgba(196,49,75,.14);color:var(--red);font-weight:800;border-radius:3px;padding:0 2px}
   .arow mark.hl{background:rgba(196,49,75,.12)}
   .mutelabel{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:#fff;
@@ -167,7 +167,7 @@
 
 <div class="topbar">
   <h1>X Feed Control — Semantic Mute</h1>
-  <span class="sub">Matches concepts, not keywords</span>
+  <span class="sub">Semantic matching, not keywords</span>
 </div>
 
 <div class="stage">
@@ -219,7 +219,7 @@
       </div>
       <div class="panelbody">
         <div class="sechead">
-          <h2>Muted concepts</h2>
+          <h2>Muted topics</h2>
           <span class="infowrap">
             <button class="ibtn" id="scopeInfo" aria-label="What does a mute cover?">i</button>
             <span class="scopetip" id="scopeTip" role="tooltip">Mutes apply to <b>posts and replies</b> in your feed. Nothing is deleted. Remove a mute to bring its posts back.</span>
@@ -229,7 +229,7 @@
         <div id="mutes"></div>
 
         <div class="addmute">
-          <label for="muteInput">Mute a new concept</label>
+          <label for="muteInput">Mute a new topic</label>
           <div class="row">
             <input id="muteInput" placeholder="e.g. sports, AI hype, gardening…" autocomplete="off">
             <button class="mutebtn" id="muteAdd" disabled>Mute</button>
@@ -244,7 +244,7 @@
 
     <div class="toast" id="toast"><span id="toastText"></span><button id="undoBtn">Undo</button></div>
   </div>
-  <div class="hint">Tap the sliders icon top right, mute a concept, and watch matching posts fade out of the timeline live.</div>
+  <div class="hint">Tap the sliders icon top right, mute a topic, and watch matching posts fade out of the timeline live.</div>
 </div>
 
 <dialog id="reviewDlg">
@@ -304,7 +304,7 @@ const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",a
 const RAW = [
 /* our class — CBS PM class chatter, pinned to the top in a fixed order so muting "CBS PM Class" is obvious */
 ["Ashley Paczolt","ashleypaczolt",0,1,"course","Incredible presentation from the X team so far. I'm impressed.",1450,320,110,38600,0,-1],
-["Ruiyan Li","ruiyanli",0,2,"course","my working theory is keyword muting was cooking everyone's feed this whole time. that's why we need concept muting #CBSBlockWeek",980,410,86,27300,0,-1,null,{"n":"Kalshi","h":"Kalshi","v":1,"t":"JUST IN: X head of product, Nikita Bier, steps down"}],
+["Ruiyan Li","ruiyanli",0,2,"course","my working theory is keyword muting was cooking everyone's feed this whole time. that's why we need semantic muting #CBSBlockWeek",980,410,86,27300,0,-1,null,{"n":"Kalshi","h":"Kalshi","v":1,"t":"JUST IN: X head of product, Nikita Bier, steps down"}],
 ["Heloisa Oro de Lirio","heloisaoro",0,1,"course","My group sucks… missing McKinsey",1100,240,96,31200,0,-1,"group-photo.jpg"],
 ["Mithat Kus","mithatkus",0,4,"course","who picks Docusign LMAO #CBSBlockWeek",560,95,37,19300,0,-1],
 ["Nikhil Malik","nikhilmalik",0,7,"course","need an A in the PM class to keep my 4.0 GPA. Wish the prof saw this...",780,160,71,24100,0,-1],
@@ -484,7 +484,7 @@ function postMatches(p,m){
   return false;
 }
 
-/* ---------------- concept-match evidence: does the literal word even appear? ---------------- */
+/* ---------------- semantic-match evidence: does the literal word even appear? ---------------- */
 function triggerWords(text,tags){
   const lower = text.toLowerCase();
   const hits = [];
@@ -628,7 +628,7 @@ function renderMutes(cls){
       <button class="remove" data-rm="${i}" aria-label="Remove mute ${esc(m.label)}" title="Remove this mute">✕</button>
       <button class="review" data-review="${m.id}" ${n||restoredHere?"":"disabled"}>Review hidden posts (${n})</button>
     </div>`;
-  }).join("") : `<div class="nomutes">No muted concepts yet. Add one below and watch the feed change live.</div>`;
+  }).join("") : `<div class="nomutes">No muted topics yet. Add one below and watch the feed change live.</div>`;
 
   $("mutes").querySelectorAll("[data-rm]").forEach(el=>
     el.addEventListener("click",e=>removeMute(+e.currentTarget.dataset.rm)));
@@ -660,7 +660,7 @@ function removeMute(i){
   const m = state.mutes[i];
   state.mutes.splice(i,1);
   update();
-  toast(`Unmuted “${m.label}” — concept restored`, ()=>{
+  toast(`Unmuted “${m.label}” — topic restored`, ()=>{
     state.mutes.splice(i,0,m); update();
     toast(`“${m.label}” muted again`);
   });
@@ -736,7 +736,7 @@ $("muteAdd").addEventListener("click",()=>{
   const v = $("muteInput").value.trim();
   if(!v) return;
   const tags = matchTags(v);
-  // typing a concept that resolves to a known topic reuses its proper label,
+  // typing a phrase that resolves to a known topic reuses its proper label,
   // so "cbs pm class" reads as "CBS PM Class" rather than "Cbs pm class"
   const known = SUGGEST.find(s=>s.tags.length===tags.length && s.tags.every(t=>tags.includes(t)));
   addMute(known ? known.label : v[0].toUpperCase()+v.slice(1), tags, v.toLowerCase());
