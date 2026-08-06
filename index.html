@@ -4,10 +4,10 @@
 <title>X Feed Control — Semantic Mute Demo</title>
 <style>
   :root{
-    --bg:#f6f8f9; --surface:#ffffff; --ink:#0f1419; --ink2:#536471; --ink3:#8b98a5;
-    --line:#e8edf1; --accent:#1d9bf0; --green:#00a06a; --green-soft:#e7f5ef;
-    --red:#c4314b; --red-soft:#fbecef; --chip:#eff3f4;
-    --shadow:0 1px 2px rgba(15,20,25,.06),0 8px 24px rgba(15,20,25,.08);
+    --bg:#000000; --surface:#000000; --elevated:#16181c; --ink:#e7e9ea; --ink2:#71767b; --ink3:#536471;
+    --line:#2f3336; --accent:#1d9bf0; --green:#00ba7c; --green-soft:rgba(0,186,124,.14);
+    --red:#f4212e; --red-soft:rgba(244,33,46,.14); --chip:#16181c;
+    --shadow:0 1px 3px rgba(0,0,0,.5),0 16px 40px rgba(0,0,0,.6);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
@@ -26,24 +26,28 @@
     height:min(86vh,860px);position:relative}
   .phonehead{padding:12px 14px 0;border-bottom:1px solid var(--line);flex:none;background:var(--surface)}
   .statusrow{display:flex;justify-content:space-between;color:var(--ink2);font-size:11px;font-weight:600;padding-bottom:6px}
-  .apphead{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
+  .apphead{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;padding:2px 0 10px}
   .avbtn{width:34px;height:34px;border-radius:50%;border:0;background:#7856ff;color:#fff;font-weight:800;cursor:pointer;flex:none}
-  .apphead .title{font-weight:800;font-size:17px;flex:1}
-  /* prominent, labelled entry point */
-  .fcbtn{display:flex;align-items:center;gap:6px;border:0;background:var(--accent);color:#fff;
-    font-weight:700;font-size:13px;border-radius:999px;padding:8px 14px;cursor:pointer;box-shadow:0 1px 4px rgba(29,155,240,.35)}
-  .fcbtn:active{transform:scale(.97)}
-  .fcbtn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+  .xlogo{justify-self:center;color:var(--ink);display:flex}
+  .headicon{justify-self:end;position:relative;width:34px;height:34px;border:0;background:none;color:var(--accent);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .headicon:active{background:rgba(255,255,255,.08)}
   .tabs{display:flex;font-size:14px;color:var(--ink2)}
   .tabs div{flex:1;text-align:center;padding:10px 0;cursor:default}
+  .tabs .plus{flex:0 0 auto;padding:10px 16px}
   .tabs .on{color:var(--ink);font-weight:800;position:relative}
   .tabs .on span{position:relative;display:inline-block;padding-bottom:8px}
   .tabs .on span:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);border-radius:2px}
 
-  .settingsbar{display:flex;align-items:center;gap:8px;background:var(--chip);margin:8px 12px;border-radius:10px;
-    padding:9px 12px;font-size:13px;color:var(--ink2);flex:none;cursor:pointer;border:0;width:calc(100% - 24px);text-align:left}
-  .settingsbar b{color:var(--ink);font-weight:700}
-  .settingsbar .go{margin-left:auto;color:var(--accent);font-weight:700}
+  /* ---------- bottom nav ---------- */
+  .bottomnav{display:flex;justify-content:space-around;align-items:center;padding:9px 4px;
+    border-top:1px solid var(--line);flex:none;background:var(--surface)}
+  .navicon{position:relative;border:0;background:none;color:var(--ink2);padding:8px;border-radius:50%;
+    cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .navicon:active{background:rgba(255,255,255,.08)}
+  .navicon.active{color:var(--ink)}
+  .navbadge{position:absolute;top:-2px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;
+    border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
 
   .feed{overflow-y:auto;flex:1}
   .post{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);
@@ -69,7 +73,6 @@
   .arow mark.hl{background:rgba(196,49,75,.12)}
   .mutelabel{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:#fff;
     background:var(--red);border-radius:999px;padding:4px 11px;margin:2px 0 6px}
-  .mutelabel .nokw{background:rgba(255,255,255,.25);border-radius:999px;padding:1px 8px;font-weight:700}
   @keyframes mutefade{0%{opacity:1}55%{opacity:1}100%{opacity:0;transform:scale(.96)}}
   .post.muting{animation:mutefade .85s ease forwards;background:var(--red-soft)}
   .post.muting .ptext{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
@@ -94,9 +97,9 @@
   .ibtn{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink3);background:none;color:var(--ink2);
     font-size:11px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
   .ibtn:hover,.ibtn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
-  .scopetip{position:absolute;top:24px;left:-8px;width:236px;background:var(--ink);color:#fff;border-radius:10px;
-    padding:9px 11px;font-size:12px;line-height:1.4;font-weight:500;z-index:30;opacity:0;visibility:hidden;transition:opacity .12s;box-shadow:var(--shadow)}
-  .scopetip:after{content:"";position:absolute;top:-5px;left:12px;border:5px solid transparent;border-top:0;border-bottom-color:var(--ink)}
+  .scopetip{position:absolute;top:24px;left:-8px;width:236px;background:var(--elevated);color:var(--ink);border-radius:10px;
+    padding:9px 11px;font-size:12px;line-height:1.4;font-weight:500;z-index:30;opacity:0;visibility:hidden;transition:opacity .12s;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .scopetip:after{content:"";position:absolute;top:-5px;left:12px;border:5px solid transparent;border-top:0;border-bottom-color:var(--elevated)}
   .infowrap:hover .scopetip,.infowrap:focus-within .scopetip,.scopetip.open{opacity:1;visibility:visible}
 
   .muterow{display:flex;align-items:center;gap:8px;background:var(--red-soft);border-radius:10px;padding:10px 12px;margin:7px 0;flex-wrap:wrap}
@@ -139,25 +142,20 @@
   .from{display:inline-block;font-size:10.5px;font-weight:700;color:var(--ink2);background:var(--chip);border-radius:5px;padding:1px 6px;margin-left:4px}
   .arow p{margin:3px 0 7px;font-size:13px;color:var(--ink2)}
   .arow button{font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--accent);font-weight:700;border-radius:999px;padding:5px 13px;cursor:pointer}
-  .arow button.rehide{color:var(--ink2)}
   .rsec{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
   .rsec h4{margin:0 0 4px;font-size:12.5px}
-  .arow.flagged{background:#fff8e8;border-radius:10px;padding:11px 10px;margin:6px -4px}
-  .flagtag{display:inline-block;font-size:10.5px;font-weight:700;color:#9a6700;background:#fdf3e1;
-    border:1px solid #e8c98a;border-radius:5px;padding:1px 6px;margin-left:4px}
-  .learn{display:flex;gap:8px;align-items:flex-start;background:#eef7fd;border:1px solid #cbe6f8;
-    border-radius:10px;padding:9px 11px;font-size:12px;color:#1a5a80;margin-bottom:12px;line-height:1.45}
-  .learn b{color:#0f3f5c}
+  .arow.flagged{background:rgba(255,183,3,.10);border-radius:10px;padding:11px 10px;margin:6px -4px}
+  .flagtag{display:inline-block;font-size:10.5px;font-weight:700;color:#ffb703;background:rgba(255,183,3,.14);
+    border:1px solid rgba(255,183,3,.35);border-radius:5px;padding:1px 6px;margin-left:4px}
+  .learn{display:flex;gap:8px;align-items:flex-start;background:rgba(29,155,240,.10);border:1px solid rgba(29,155,240,.30);
+    border-radius:10px;padding:9px 11px;font-size:12px;color:#8ecdf7;margin-bottom:12px;line-height:1.45}
+  .learn b{color:#bfe3fb}
   .learn[hidden]{display:none}
-  .arow.marked{opacity:.72}
-  .markedrow{display:flex;align-items:center;gap:10px}
-  .donetag{font-size:12px;font-weight:700;color:var(--green)}
-  .markedrow .rehide{border:0;background:none;color:var(--ink2);text-decoration:underline;padding:2px 0;font-size:12px;font-weight:700;cursor:pointer}
 
   /* ---------- toast ---------- */
-  .toast{position:absolute;left:14px;right:14px;bottom:16px;background:var(--ink);color:#fff;border-radius:12px;
+  .toast{position:absolute;left:14px;right:14px;bottom:70px;background:var(--elevated);color:var(--ink);border-radius:12px;
     padding:11px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px;
-    opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:40}
+    opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:40;border:1px solid var(--line)}
   .toast.show{opacity:1;transform:none;pointer-events:auto}
   .toast button{border:0;background:none;color:#7cc7ff;font-weight:800;cursor:pointer;white-space:nowrap}
 </style>
@@ -173,17 +171,40 @@
       <div class="statusrow"><span>9:41</span><span>●●● ⌁ ▮</span></div>
       <div class="apphead">
         <button class="avbtn">R</button>
-        <span class="title">For You</span>
-        <button class="fcbtn" id="fcBtn">
-          <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#1d9bf0"/><circle cx="15" cy="12" r="2.4" fill="#1d9bf0"/><circle cx="8" cy="17" r="2.4" fill="#1d9bf0"/></svg>
-          Feed Control
+        <span class="xlogo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7.1l-5.5-7.2L4.3 22H1.2l8.1-9.3L1 2h7.3l5 6.6L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg>
+        </span>
+        <button class="headicon" id="navFeedControl" aria-label="Feed Control">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/>
+            <line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/>
+            <line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="navbadge" id="navBadge" hidden></span>
         </button>
       </div>
-      <div class="tabs"><div class="on"><span>For You</span></div><div>Following</div></div>
+      <div class="tabs"><div class="on"><span>For you</span></div><div>Following</div><div class="plus">+</div></div>
     </div>
 
-    <button class="settingsbar" id="barBtn">✓&nbsp;<span id="barText"></span><span class="go">Manage</span></button>
     <div class="feed" id="feed"></div>
+
+    <div class="bottomnav">
+      <button class="navicon active" aria-label="Home">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1.696 0 12h3v9h6v-6h6v6h6v-9h3z"/></svg>
+      </button>
+      <button class="navicon" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="navicon" aria-label="Grok">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M6 12c2-4 10-4 12 0-2 4-10 4-12 0Z"/></svg>
+      </button>
+      <button class="navicon" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6Z"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/></svg>
+      </button>
+      <button class="navicon" aria-label="Messages">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="m3 6 9 7 9-7"/></svg>
+      </button>
+    </div>
 
     <div class="panel" id="panel" aria-hidden="true">
       <div class="panelhead">
@@ -212,13 +233,13 @@
           <div class="suggest" id="suggest"></div>
         </div>
 
-        <p class="explain">Matched on meaning, not spelling — <b>a post can be hidden even when it never uses the muted word.</b> Tap <b>Review hidden posts</b> to see exactly why, including matches with no shared keyword at all. If the matcher got one wrong, mark it as misclassified — that trains it to stop catching posts like it.</p>
+        <p class="explain">Mutes match by topic, not exact wording. Marking a post misclassified restores it and improves future matches.</p>
       </div>
     </div>
 
     <div class="toast" id="toast"><span id="toastText"></span><button id="undoBtn">Undo</button></div>
   </div>
-  <div class="hint">Mute a concept below and watch matching posts fade out of the timeline live — no reload, no keyword search.</div>
+  <div class="hint">Tap the sliders icon top right, mute a concept, and watch matching posts fade out of the timeline live.</div>
 </div>
 
 <dialog id="reviewDlg">
@@ -471,7 +492,7 @@ function highlightText(text,tags){
 /* ---------------- state ---------------- */
 const state = {
   mutes:[],               // demo starts with nothing muted — mute live to show the before/after
-  exempt:new Set(),      // "muteId:postId" pairs marked misclassified (feedback only, stays hidden)
+  exempt:new Set(),      // "muteId:postId" pairs marked misclassified — excluded from that mute, restored to the feed
   learned:new Map(),     // muteId -> Set of topic tags the matcher has learned to stop hiding
   nextCustom:1,
   lastUndo:null,
@@ -492,13 +513,13 @@ function classify(){
   const byMute = new Map(state.mutes.map(m=>[m.id,[]]));
   const visible=[];
   for(const p of posts){
-    const m = state.mutes.find(m=>postMatches(p,m));
+    const m = state.mutes.find(m=>postMatches(p,m) && !state.exempt.has(m.id+":"+p.id));
     if(m) byMute.get(m.id).push(p); else visible.push(p);
   }
   return {visible, byMute};
 }
-/* corrections: marking a post misclassified teaches the matcher which adjacent
-   topics it is over-matching, so similar hidden posts get flagged for review */
+/* corrections: marking a post misclassified restores it to the feed and teaches the
+   matcher which adjacent topics it is over-matching, so similar hidden posts get flagged */
 function correctionsFor(muteId){ return [...state.exempt].filter(k=>k.startsWith(muteId+":")).map(k=>+k.split(":")[1]); }
 function learnFrom(muteId, postId){
   const m = state.mutes.find(x=>x.id===muteId);
@@ -537,12 +558,6 @@ function renderFeed(cls, opts){
   opts = opts || {};
   const list = (opts.frozenIds ? posts.filter(p=>opts.frozenIds.has(p.id)) : cls.visible.slice())
     .sort((a,b)=>rank(b)-rank(a));
-  const hidden = posts.length - cls.visible.length;
-
-  $("barText").innerHTML = state.mutes.length
-    ? `<b>${state.mutes.length} muted concept${state.mutes.length===1?"":"s"}</b> · ${hidden} post${hidden===1?"":"s"} hidden`
-    : `Nothing muted yet — <b>tap Manage to try it live</b>`;
-
   if(!list.length){ $("feed").innerHTML = `<div class="empty">Everything is filtered out. Remove a mute in Feed Control.</div>`; return; }
 
   $("feed").innerHTML = list.map(p=>{
@@ -551,9 +566,8 @@ function renderFeed(cls, opts){
     let textHtml = esc(p.t), overlay = "";
     if(isMuting){
       const m = state.mutes.find(x=>x.id===opts.muteOf.get(p.id));
-      const words = m ? triggerWords(p.t,m.tags) : [];
       textHtml = m ? highlightText(p.t,m.tags) : esc(p.t);
-      overlay = `<div class="mutelabel">Muted — ${esc(m?m.label:"")}${words.length?"":' <span class="nokw">no keyword match</span>'}</div>`;
+      overlay = `<div class="mutelabel">Muted — ${esc(m?m.label:"")}</div>`;
     }
     return `<article class="post ${isMuting?"muting":""} ${isFlash?"restored":""}" data-id="${p.id}">
       <div class="av" style="background:${p.color}">${esc(initials(p.n))}</div>
@@ -587,13 +601,11 @@ function renderMutes(cls){
   $("muteTotal").textContent = total;
 
   $("mutes").innerHTML = state.mutes.length ? state.mutes.map((m,i)=>{
-    const hiddenList = cls.byMute.get(m.id);
-    const n = hiddenList.length;
+    const n = cls.byMute.get(m.id).length;
     const restoredHere = correctionsFor(m.id).length;
-    const meaningOnly = hiddenList.filter(p=>!triggerWords(p.t,m.tags).length).length;
     return `<div class="muterow">
       <span class="mname">${esc(m.label)}</span>
-      <span class="mcount">${n} hidden${meaningOnly?` · <b>${meaningOnly} by meaning only</b>`:""}${restoredHere?` · ${restoredHere} correction${restoredHere===1?"":"s"}`:""}</span>
+      <span class="mcount">${n} hidden${restoredHere?` · ${restoredHere} correction${restoredHere===1?"":"s"}`:""}</span>
       <button class="remove" data-rm="${i}" aria-label="Remove mute ${esc(m.label)}" title="Remove this mute">✕</button>
       <button class="review" data-review="${m.id}" ${n||restoredHere?"":"disabled"}>Review hidden posts (${n})</button>
     </div>`;
@@ -665,20 +677,14 @@ function drawReview(){
     $("learnBox").hidden = true;
   }
 
-  // flagged suggestions first, already-marked items last
-  const ordered = hidden.slice().sort((a,b)=>{
-    const rank = p => state.exempt.has(m.id+":"+p.id) ? 2 : (flagged.has(p.id) ? 0 : 1);
-    return rank(a)-rank(b);
-  });
+  // flagged (possibly-also-misclassified) suggestions surface first
+  const ordered = hidden.slice().sort((a,b)=>(flagged.has(b.id)?1:0)-(flagged.has(a.id)?1:0));
 
   $("reviewRows").innerHTML = ordered.length ? ordered.map(p=>{
-    const marked = state.exempt.has(m.id+":"+p.id);
-    return `<div class="arow ${flagged.has(p.id)&&!marked?"flagged":""} ${marked?"marked":""}">
-      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}</div>
+    return `<div class="arow ${flagged.has(p.id)?"flagged":""}">
+      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)?'<span class="flagtag">May also be misclassified</span>':""}</div>
       <p>${highlightText(p.t,m.tags)}</p>
-      ${marked
-        ? `<div class="markedrow"><span class="donetag">✓ Marked as misclassified</span><button class="rehide" data-uncorrect="${m.id}:${p.id}">Undo</button></div>`
-        : `<button data-correct="${m.id}:${p.id}">Mark as misclassified</button>`}
+      <button data-correct="${m.id}:${p.id}">Mark as misclassified</button>
     </div>`;
   }).join("") : `<p class="mnote">Nothing is hidden by this mute right now.</p>`;
 
@@ -687,18 +693,8 @@ function drawReview(){
       const key = e.currentTarget.dataset.correct;
       const [mid,pid] = key.split(":");
       state.exempt.add(key); learnFrom(mid,+pid); update(); drawReview();
-      toast("Marked as misclassified — the matcher will learn from this", ()=>{
+      toast("Marked as misclassified — restored to your feed", ()=>{
         state.exempt.delete(key); relearn(mid); update(); drawReview(); toast("Correction undone");
-      });
-    }));
-  $("reviewRows").querySelectorAll("[data-uncorrect]").forEach(el=>
-    el.addEventListener("click",e=>{
-      const key = e.currentTarget.dataset.uncorrect;
-      const mid = key.split(":")[0];
-      state.exempt.delete(key); relearn(mid); update(); drawReview();
-      toast("Correction undone", ()=>{
-        const [m2,p2] = key.split(":");
-        state.exempt.add(key); learnFrom(m2,+p2); update(); drawReview(); toast("Marked as misclassified again");
       });
     }));
 }
@@ -734,10 +730,16 @@ document.addEventListener("click",()=>$("scopeTip").classList.remove("open"));
 
 /* ---------------- panel ---------------- */
 function setPanel(open){ $("panel").classList.toggle("open",open); $("panel").setAttribute("aria-hidden",!open); }
-$("fcBtn").addEventListener("click",()=>setPanel(true));
-$("barBtn").addEventListener("click",()=>setPanel(true));
+$("navFeedControl").addEventListener("click",()=>setPanel(true));
 $("backBtn").addEventListener("click",()=>setPanel(false));
 $("doneBtn").addEventListener("click",()=>setPanel(false));
+
+function updateNavBadge(){
+  const n = state.mutes.length;
+  const b = $("navBadge");
+  b.hidden = !n;
+  b.textContent = n;
+}
 
 /* ---------------- toast with undo ---------------- */
 let toastTimer;
@@ -762,6 +764,7 @@ function update(){
   const myToken = ++updateToken;
   const cls = classify();
   renderMutes(cls);
+  updateNavBadge();
 
   const newIds = new Set(cls.visible.map(p=>p.id));
   const hiding = [...visibleIds].filter(id=>!newIds.has(id));
