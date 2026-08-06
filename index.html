@@ -70,8 +70,6 @@
   .mutelabel{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:#fff;
     background:var(--red);border-radius:999px;padding:4px 11px;margin:2px 0 6px}
   .mutelabel .nokw{background:rgba(255,255,255,.25);border-radius:999px;padding:1px 8px;font-weight:700}
-  .nokwtag{display:inline-block;font-size:10.5px;font-weight:700;color:#1a5a80;background:#eef7fd;
-    border:1px solid #cbe6f8;border-radius:5px;padding:1px 6px;margin-left:4px}
   @keyframes mutefade{0%{opacity:1}55%{opacity:1}100%{opacity:0;transform:scale(.96)}}
   .post.muting{animation:mutefade .85s ease forwards;background:var(--red-soft)}
   .post.muting .ptext{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
@@ -274,7 +272,7 @@ const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",a
   food:"food",pets:"pets",space:"space",sci:"science",wx:"weather",hustle:"hustle",news:"news",econ:"economics",
   humor:"humor",startup:"startups",travel:"travel",garden:"gardening",city:"local news",fit:"fitness",music:"music",
   gaming:"gaming",cars:"cars",fash:"fashion",books:"books",health:"health",parent:"parenting",art:"art",photo:"photography",
-  re:"real estate",edu:"education",course:"CBS PM class"};
+  re:"real estate",edu:"education",course:"CBS PM Class"};
 
 /* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img, [photo] ---------------- */
 const RAW = [
@@ -675,9 +673,8 @@ function drawReview(){
 
   $("reviewRows").innerHTML = ordered.length ? ordered.map(p=>{
     const marked = state.exempt.has(m.id+":"+p.id);
-    const noKeyword = !triggerWords(p.t,m.tags).length;
     return `<div class="arow ${flagged.has(p.id)&&!marked?"flagged":""} ${marked?"marked":""}">
-      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}${noKeyword?'<span class="nokwtag">No keyword — matched by meaning</span>':""}</div>
+      <div class="awho">${esc(p.n)} <span>@${esc(p.h)} · ${ago(p.m)}</span><span class="from">${p.replyTo?"reply":"post"}</span>${flagged.has(p.id)&&!marked?'<span class="flagtag">May also be misclassified</span>':""}</div>
       <p>${highlightText(p.t,m.tags)}</p>
       ${marked
         ? `<div class="markedrow"><span class="donetag">✓ Marked as misclassified</span><button class="rehide" data-uncorrect="${m.id}:${p.id}">Undo</button></div>`
@@ -723,7 +720,11 @@ $("muteInput").addEventListener("input",e=>{
 $("muteAdd").addEventListener("click",()=>{
   const v = $("muteInput").value.trim();
   if(!v) return;
-  addMute(v[0].toUpperCase()+v.slice(1), matchTags(v), v.toLowerCase());
+  const tags = matchTags(v);
+  // typing a concept that resolves to a known topic reuses its proper label,
+  // so "cbs pm class" reads as "CBS PM Class" rather than "Cbs pm class"
+  const known = SUGGEST.find(s=>s.tags.length===tags.length && s.tags.every(t=>tags.includes(t)));
+  addMute(known ? known.label : v[0].toUpperCase()+v.slice(1), tags, v.toLowerCase());
 });
 $("muteInput").addEventListener("keydown",e=>{ if(e.key==="Enter" && !$("muteAdd").disabled) $("muteAdd").click(); });
 
