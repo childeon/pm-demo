@@ -65,6 +65,11 @@
   .ptext{margin:4px 0 7px;font-size:16.5px;line-height:1.55}
   .pimg{height:130px;border-radius:14px;display:flex;align-items:flex-end;padding:8px 10px;color:#fff;font-size:11px;font-weight:700;margin-bottom:6px}
   .pimg.realimg{height:auto;max-height:320px;width:100%;object-fit:cover;display:block;padding:0}
+  .qtcard{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:2px 0 8px}
+  .qthead{display:flex;align-items:center;gap:5px;font-size:13px}
+  .qtname{font-weight:700}
+  .qthandle{color:var(--ink3)}
+  .qttext{margin:3px 0 0;font-size:14px;color:var(--ink)}
   .prow{display:flex;justify-content:space-between;color:var(--ink3);font-size:13px;max-width:320px}
   .empty{padding:40px 22px;text-align:center;color:var(--ink3)}
 
@@ -295,18 +300,17 @@ const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",a
   gaming:"gaming",cars:"cars",fash:"fashion",books:"books",health:"health",parent:"parenting",art:"art",photo:"photography",
   re:"real estate",edu:"education",course:"CBS PM Class"};
 
-/* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img, [photo] ---------------- */
+/* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img, [photo], [quote:{n,h,v,t}] ---------------- */
 const RAW = [
 /* our class — CBS PM class chatter, pinned to the top in a fixed order so muting "CBS PM Class" is obvious */
 ["Ashley Paczolt","ashleypaczolt",0,1,"course","Incredible presentation from the X team so far. I'm impressed.",1450,320,110,38600,0,-1],
+["Ruiyan Li","ruiyanli",0,2,"course","my working theory is keyword muting was cooking everyone's feed this whole time. that's why we need concept muting #CBSBlockWeek",980,410,86,27300,0,-1,null,{"n":"Kalshi","h":"Kalshi","v":1,"t":"JUST IN: X head of product, Nikita Bier, steps down"}],
 ["Heloisa Oro de Lirio","heloisaoro",0,1,"course","My group sucks… missing McKinsey",1100,240,96,31200,0,-1,"group-photo.jpg"],
 ["Mithat Kus","mithatkus",0,4,"course","who picks Docusign LMAO #CBSBlockWeek",560,95,37,19300,0,-1],
-["Ruiyan Li","ruiyanli",0,3,"course","head of product at X just got fired. should have hired us earlier buddy",890,175,62,26800,0,-1],
 ["Nikhil Malik","nikhilmalik",0,7,"course","need an A in the PM class to keep my 4.0 GPA. Wish the prof saw this...",780,160,71,24100,0,-1],
 ["Miranda Marpaung","mirandamarp",0,5,"course","I am building the X app from scratch at 11pm the night the presentation is due. Amazing.",840,190,66,22400,0,-1],
 ["Nikhil Malik","nikhilmalik",0,3,"course","me, a consultant, about to argue SQL vs NoSQL with an engineer with 10+ years of actual database experience (I'm gonna lose)",620,140,58,15200,0,-1],
 ["Ruiyan Li","ruiyanli",0,2,"course","sipping my coffee and reflecting on the work ahead, I reference the GTM Checklist I learned in my favorite PM class at CBS and begin listing out the critical elements of the GTM strategy…",710,120,44,18100,0,-1],
-["Mithat Kus","mithatkus",0,6,"course","nikita bier stepping down as x's head of product and i have a theory: keyword muting was cooking everyone's feed this whole time. concept muting or nothing #CBSBlockWeek",690,150,52,20800,0,-1],
 /* news */
 ["Wire Report","wirereport",1,15,"news","Breaking: port workers reach a tentative agreement, averting Friday's strike deadline. Terms expected within the hour.",610,404,120,52300,0,-1],
 ["Metro Desk","metro_desk",1,52,"news city","City council approves the riverfront housing plan, 7 to 2. What changes, and when.",240,71,45,9900,0,-1],
@@ -457,7 +461,7 @@ function avatarColor(handle){
 
 const posts = RAW.map((r,i)=>({
   id:i, n:r[0], h:r[1], v:!!r[2], m:r[3], sem:r[4].split(" "), t:r[5],
-  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:avatarColor(r[1]), photo:r[12]||null
+  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:avatarColor(r[1]), photo:r[12]||null, quote:r[13]||null
 }));
 
 /* ---------------- semantic matcher ---------------- */
@@ -590,6 +594,10 @@ function renderFeed(cls, opts){
         ${p.replyTo?`<div class="replyto">Replying to @${esc(p.replyTo)}</div>`:""}
         <p class="ptext">${textHtml}</p>
         ${overlay}
+        ${p.quote?`<div class="qtcard">
+          <div class="qthead"><span class="qtname">${esc(p.quote.n)}</span>${p.quote.v?'<span class="vbadge">✔</span>':""}<span class="qthandle">@${esc(p.quote.h)}</span></div>
+          <p class="qttext">${esc(p.quote.t)}</p>
+        </div>`:""}
         ${p.photo?`<img class="pimg realimg" src="${esc(p.photo)}" alt="">`:(p.img>=0?`<div class="pimg" style="background:${GRAD[p.img]}">IMAGE</div>`:"")}
         <div class="prow"><span>💬 ${fmt(p.rep)}</span><span>↻ ${fmt(p.rts)}</span><span>♡ ${fmt(p.likes)}</span><span>📊 ${fmt(p.views)}</span></div>
       </div>
