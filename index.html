@@ -50,9 +50,24 @@
     border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
 
   .feed{overflow-y:auto;flex:1}
-  .post{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);
+  .post{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);position:relative;
     transition:background-color .6s ease,border-color .6s ease}
   .post.restored{background:var(--green-soft);border-left:3px solid var(--green)}
+  .kebab{position:absolute;top:9px;right:8px;border:0;background:none;color:var(--ink3);font-size:16px;
+    line-height:1;padding:5px 9px;border-radius:999px;cursor:pointer}
+  .kebab:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+  .kmenu{position:absolute;top:36px;right:8px;background:var(--elevated);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:230px;z-index:20}
+  .kmenu-item,.kmenu-topic{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink);
+    padding:9px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+  .kmenu-item:hover,.kmenu-topic:hover{background:rgba(255,255,255,.06)}
+  .kmenu-label{font-size:11.5px;color:var(--ink3);padding:6px 8px 2px;font-weight:700}
+  .kmenu-newrow{display:flex;gap:6px;padding:8px 6px 4px}
+  .kmenu-input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;
+    padding:7px 9px;font:inherit;font-size:12.5px;color:var(--ink);outline:none}
+  .kmenu-input:focus{border-color:var(--accent)}
+  .kmenu-add{border:0;background:var(--accent);color:#fff;font-weight:700;border-radius:8px;padding:7px 12px;
+    font-size:12.5px;cursor:pointer}
   .av{width:40px;height:40px;border-radius:50%;border:0;color:#fff;font-weight:700;font-size:12px;flex:none;
     display:flex;align-items:center;justify-content:center;cursor:default}
   .pbody{min-width:0;flex:1}
@@ -510,6 +525,7 @@ function highlightText(text,tags){
 const state = {
   mutes:[],               // demo starts with nothing muted — mute live to show the before/after
   exempt:new Set(),      // "muteId:postId" pairs marked misclassified — excluded from that mute, restored to the feed
+  forced:new Set(),      // "muteId:postId" pairs manually flagged "should've been muted" — always hidden by that mute
   learned:new Map(),     // muteId -> Set of topic tags the matcher has learned to stop hiding
   nextCustom:1,
   lastUndo:null,
@@ -530,7 +546,7 @@ function classify(){
   const byMute = new Map(state.mutes.map(m=>[m.id,[]]));
   const visible=[];
   for(const p of posts){
-    const m = state.mutes.find(m=>postMatches(p,m) && !state.exempt.has(m.id+":"+p.id));
+    const m = state.mutes.find(m=>(postMatches(p,m)||state.forced.has(m.id+":"+p.id)) && !state.exempt.has(m.id+":"+p.id));
     if(m) byMute.get(m.id).push(p); else visible.push(p);
   }
   return {visible, byMute};
@@ -587,6 +603,8 @@ function renderFeed(cls, opts){
       overlay = `<div class="mutelabel">Muted — ${esc(m?m.label:"")}</div>`;
     }
     return `<article class="post ${isMuting?"muting":""} ${isFlash?"restored":""}" data-id="${p.id}">
+      ${isMuting?"":`<button class="kebab" data-kebab="${p.id}" aria-label="More options">⋯</button>
+      <div class="kmenu" data-kmenu="${p.id}" hidden></div>`}
       <div class="av" style="background:${p.color}">${esc(initials(p.n))}</div>
       <div class="pbody">
         <div class="pline">
@@ -614,6 +632,69 @@ function renderFeed(cls, opts){
       });
     }, 1500);
   }
+
+  $("feed").querySelectorAll("[data-kebab]").forEach(btn=>
+    btn.addEventListener("click",e=>{ e.stopPropagation(); toggleKebab(+btn.dataset.kebab); }));
+}
+
+/* ---------------- "this should've been muted" kebab menu ---------------- */
+function closeAllKebabs(){ document.querySelectorAll(".kmenu").forEach(el=>{ el.hidden=true; el.innerHTML=""; }); }
+document.addEventListener("click",closeAllKebabs);
+
+function toggleKebab(postId){
+  const wasOpen = !document.querySelector(`.kmenu[data-kmenu="${postId}"]`)?.hidden;
+  closeAllKebabs();
+  if(wasOpen) return;
+  const el = document.querySelector(`.kmenu[data-kmenu="${postId}"]`);
+  if(!el) return;
+  el.hidden = false;
+  renderKebabStep1(postId, el);
+}
+function renderKebabStep1(postId, el){
+  el.innerHTML = `<button class="kmenu-item" data-shouldmute>This post should've been muted</button>`;
+  el.querySelector("[data-shouldmute]").addEventListener("click",e=>{
+    e.stopPropagation();
+    renderKebabStep2(postId, el);
+  });
+}
+function renderKebabStep2(postId, el){
+  el.innerHTML = `
+    <div class="kmenu-label">Which topic does this fall under?</div>
+    ${state.mutes.map(m=>`<button class="kmenu-topic" data-picktopic="${m.id}">${esc(m.label)}</button>`).join("")}
+    <div class="kmenu-newrow">
+      <input class="kmenu-input" placeholder="or type a new topic…">
+      <button class="kmenu-add">Add</button>
+    </div>`;
+  el.addEventListener("click",e=>e.stopPropagation());
+  el.querySelectorAll("[data-picktopic]").forEach(btn=>
+    btn.addEventListener("click",()=>forceMute(postId, btn.dataset.picktopic)));
+  const input = el.querySelector(".kmenu-input");
+  const addBtn = el.querySelector(".kmenu-add");
+  const submit = ()=>{ const v=input.value.trim(); if(v) forceMuteNewTopic(postId, v); };
+  addBtn.addEventListener("click",submit);
+  input.addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
+}
+function forceMute(postId, muteId){
+  const m = state.mutes.find(x=>x.id===muteId);
+  const key = muteId+":"+postId;
+  state.forced.add(key);
+  update();
+  toast(`Filed under “${m.label}” — should've been muted`, ()=>{
+    state.forced.delete(key); update(); toast("Correction undone");
+  });
+}
+function forceMuteNewTopic(postId, raw){
+  const tags = matchTags(raw);
+  const known = SUGGEST.find(s=>s.tags.length===tags.length && s.tags.every(t=>tags.includes(t)));
+  const label = known ? known.label : raw[0].toUpperCase()+raw.slice(1);
+  const mute = {id:"c"+state.nextCustom++, label, tags, raw: raw.toLowerCase()};
+  state.mutes.push(mute);
+  state.forced.add(mute.id+":"+postId);
+  update();
+  toast(`Muted “${label}” — this post filed under it`, ()=>{
+    state.mutes = state.mutes.filter(x=>x!==mute); update();
+    toast("Mute removed");
+  });
 }
 
 /* ---------------- mutes ---------------- */
