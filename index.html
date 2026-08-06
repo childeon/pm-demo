@@ -298,12 +298,13 @@ const LABEL = {pol:"politics",cry:"crypto",cel:"celebrity",spoil:"TV spoilers",a
 /* ---------------- posts: name, handle, verified, minsAgo, tags, text, likes, rts, replies, views, replyTo, img, [photo] ---------------- */
 const RAW = [
 /* our class — CBS PM class chatter, pinned to the top in a fixed order so muting "CBS PM Class" is obvious */
-["Nikhil Malik","nikhilmalik",0,7,"course","I need an A in the PM class to keep my 4.0 GPA. I wish Prof. Paczolt saw this tweet…",780,160,71,24100,0,-1],
+["Ashley Paczolt","ashleypaczolt",0,1,"course","Incredible presentation from the X team so far. I'm impressed.",1450,320,110,38600,0,-1],
 ["Heloisa Oro de Lirio","heloisaoro",0,1,"course","My group sucks… missing McKinsey",1100,240,96,31200,0,-1,"group-photo.jpg"],
 ["Mithat Kus","mithatkus",0,4,"course","who picks Docusign LMAO #CBSBlockWeek",560,95,37,19300,0,-1],
-["Nikhil Malik","nikhilmalik",0,3,"course","me, a consultant, about to argue SQL vs NoSQL with an engineer who has six years of actual database experience. we are so back. (I am going to lose)",620,140,58,15200,0,-1],
-["Ruiyan Li","ruiyanli",0,2,"course","sipping my coffee and reflecting on the work ahead, I reference the GTM Checklist I learned in my favorite PM class at CBS and begin listing out the critical elements of the GTM strategy…",710,120,44,18100,0,-1],
+["Nikhil Malik","nikhilmalik",0,7,"course","need an A in the PM class to keep my 4.0 GPA. Wish the prof saw this...",780,160,71,24100,0,-1],
 ["Miranda Marpaung","mirandamarp",0,5,"course","I am building the X app from scratch at 11pm the night the presentation is due. Amazing.",840,190,66,22400,0,-1],
+["Nikhil Malik","nikhilmalik",0,3,"course","me, a consultant, about to argue SQL vs NoSQL with an engineer with 10+ years of actual database experience (I'm gonna lose)",620,140,58,15200,0,-1],
+["Ruiyan Li","ruiyanli",0,2,"course","sipping my coffee and reflecting on the work ahead, I reference the GTM Checklist I learned in my favorite PM class at CBS and begin listing out the critical elements of the GTM strategy…",710,120,44,18100,0,-1],
 /* news */
 ["Wire Report","wirereport",1,15,"news","Breaking: port workers reach a tentative agreement, averting Friday's strike deadline. Terms expected within the hour.",610,404,120,52300,0,-1],
 ["Metro Desk","metro_desk",1,52,"news city","City council approves the riverfront housing plan, 7 to 2. What changes, and when.",240,71,45,9900,0,-1],
@@ -444,9 +445,17 @@ const GRAD=["linear-gradient(135deg,#1e3a5f,#4a7fa5)","linear-gradient(135deg,#2
 "linear-gradient(135deg,#28414f,#5e8b7e)","linear-gradient(135deg,#4a3f66,#7f7caf)"];
 const AVC=["#1d9bf0","#00a06a","#8b5cf6","#e0637a","#d9822b","#3f7cac","#6b8e23","#a0567b","#2e8b8b","#8a6d3b"];
 
+/* avatar colour is keyed to the handle, not the row, so the same person
+   always shows the same profile pic across every post they make */
+function avatarColor(handle){
+  let h = 0;
+  for(let i=0;i<handle.length;i++) h = (h*5 + handle.charCodeAt(i))|0;
+  return AVC[Math.abs(h)%AVC.length];
+}
+
 const posts = RAW.map((r,i)=>({
   id:i, n:r[0], h:r[1], v:!!r[2], m:r[3], sem:r[4].split(" "), t:r[5],
-  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:AVC[i%AVC.length], photo:r[12]||null
+  likes:r[6], rts:r[7], rep:r[8], views:r[9], replyTo:r[10]||null, img:r[11], color:avatarColor(r[1]), photo:r[12]||null
 }));
 
 /* ---------------- semantic matcher ---------------- */
